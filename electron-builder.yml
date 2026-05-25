@@ -1,0 +1,22 @@
+appId: com.buddy.macos
+productName: buddy
+directories:
+  release: release
+  output: dist
+files:
+  - dist/**/*
+  - out/**/*
+mac:
+  category: public.app-category.developer-tools
+  icon: build/icon.icns
+  target:
+    - dmg
+    - zip
+dmg:
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications
