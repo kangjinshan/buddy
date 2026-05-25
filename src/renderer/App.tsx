@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { useBootstrap, useTasks, useTaskDetail, useCreateTask, useSendMessage, useStartTask, useSkipCountdown, usePauseCountdown, useInterrupt } from './hooks/useBuddy'
+import { useHealthCheck, useBootstrap, useTasks, useTaskDetail, useCreateTask, useSendMessage, useStartTask, useSkipCountdown, usePauseCountdown, useInterrupt } from './hooks/useBuddy'
 import { TitleBar } from './components/TitleBar'
 import { Sidebar } from './components/Sidebar'
 import { ChatArea } from './components/ChatArea'
@@ -14,6 +14,7 @@ export default function App() {
   const [selectedWorkspaceKey, setSelectedWorkspaceKey] = useState<string | null>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
 
+  const { data: isHealthy, isLoading: isCheckingHealth, error: healthError } = useHealthCheck()
   const { data: bootstrap, isLoading: isLoadingBootstrap, error: bootstrapError } = useBootstrap()
   const { data: tasks = [], isLoading: isLoadingTasks, error: tasksError } = useTasks()
   const { data: taskDetail } = useTaskDetail(selectedTaskId, selectedWorkspaceKey ?? undefined)
@@ -123,6 +124,7 @@ export default function App() {
           selectedTaskId={selectedTaskId}
           isLoading={isLoadingTasks}
           error={tasksError}
+          isHealthy={isHealthy ?? false}
           onSelectTask={handleSelectTask}
           onCreateTask={() => setShowCreateModal(true)}
           onOpenSettings={() => {/* TODO */}}

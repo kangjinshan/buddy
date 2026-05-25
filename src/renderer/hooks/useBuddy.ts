@@ -1,6 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api'
 
+export function useHealthCheck() {
+  return useQuery({
+    queryKey: ['health'],
+    queryFn: api.checkHealth,
+    retry: 1,
+    refetchInterval: 10000
+  })
+}
+
 export function useBootstrap() {
   return useQuery({
     queryKey: ['bootstrap'],
@@ -13,7 +22,8 @@ export function useTasks() {
   return useQuery({
     queryKey: ['tasks'],
     queryFn: api.getTasks,
-    refetchInterval: 5000
+    refetchInterval: 5000,
+    retry: 2
   })
 }
 

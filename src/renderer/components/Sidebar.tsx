@@ -8,6 +8,7 @@ interface SidebarProps {
   selectedTaskId: string | null
   isLoading: boolean
   error: Error | null
+  isHealthy: boolean
   onSelectTask: (taskId: string, workspaceKey: string) => void
   onCreateTask: () => void
   onOpenSettings: () => void
@@ -21,6 +22,7 @@ export function Sidebar({
   selectedTaskId,
   isLoading,
   error,
+  isHealthy,
   onSelectTask,
   onCreateTask,
   onOpenSettings,
@@ -53,7 +55,14 @@ export function Sidebar({
       </div>
 
       <div className="flex-1 overflow-y-auto px-2">
-        {isLoading ? (
+        {!isHealthy ? (
+          <div className="px-2 py-4 text-center text-red-300 text-sm">
+            <div className="mb-2">buddy 服务未运行</div>
+            <div className="text-xs text-white/50">
+              请在终端运行: <code className="bg-white/10 px-1 rounded">buddy</code>
+            </div>
+          </div>
+        ) : isLoading ? (
           <div className="px-2 py-4 text-center text-white/50 text-sm">
             加载中...
           </div>

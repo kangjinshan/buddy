@@ -7,6 +7,15 @@ const client = axios.create({
 })
 
 export const api = {
+  async checkHealth(): Promise<boolean> {
+    try {
+      await client.get('/api/health')
+      return true
+    } catch {
+      return false
+    }
+  },
+
   async bootstrap(): Promise<BootstrapResponse> {
     const response = await client.get('/api/bootstrap')
     return response.data
