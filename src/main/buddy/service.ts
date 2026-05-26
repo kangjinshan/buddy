@@ -12,13 +12,25 @@ import type {
   Task,
   TaskDetail
 } from '../../shared/types'
+import { BuddyEventBus } from './events'
+import { BuddyRunner } from './runner'
 import { BuddyStore } from './store'
+
+export interface BuddyCoreServiceOptions {
+  dataRoot?: string
+  events?: BuddyEventBus
+}
 
 export class BuddyCoreService {
   private readonly store: BuddyStore
+  private readonly runner: BuddyRunner
+  private readonly events?: BuddyEventBus
 
-  constructor(dataRoot = defaultDataRoot()) {
-    this.store = new BuddyStore(dataRoot)
+  constructor(options: BuddyCoreServiceOptions | string = {}) {
+    const normalized = typeof options === 'string' ? { dataRoot: options } : options
+    this.events = normalized.events
+    this.store = new BuddyStore(normalized.dataRoot ?? defaultDataRoot())
+    this.runner = new BuddyRunner(this.store)
   }
 
   async checkHealth(): Promise<boolean> {
@@ -52,24 +64,25 @@ export class BuddyCoreService {
     return this.store.deleteTask(taskId, workspaceKey)
   }
 
-  async startTask(_taskId: string, _input: StartTaskInput): Promise<void> {
-    throw new Error('Runner is not implemented yet')
+  async startTask(taskId: string, input: StartTaskInput): Promise<void> {
+    await this.runner.startTask(taskId, input)
   }
 
-  async sendMessage(_taskId: string, _input: SendMessageInput): Promise<void> {
-    throw new Error('Messaging is not implemented yet')
+  sendMessage(taskId: string, input: SendMessageInput): Promise<void> {
+    return this.runner.sendMessage(taskId, input)
   }
 
-  async skipCountdown(_taskId: string, _input: CountdownInput): Promise<void> {
-    throw new Error('Countdown is not implemented yet')
+  async skipCountdown(taskId: string, input: CountdownInput): Promise<void> {
+    await this.runner.skipCountdown(taskId, input)
   }
 
-  async pauseCountdown(_taskId: string, _input: CountdownInput): Promise<void> {
-    throw new Error('Countdown is not implemented yet')
+  pauseCountdown(taskId: string, input: CountdownInput): Promise<void> {
+    return this.runner.pauseCountdown(taskId, input)
   }
 
-  async interrupt(_taskId: string, _workspaceKey?: string): Promise<void> {
-    throw new Error('Interrupt is not implemented yet')
+  interrupt(taskId: string, workspaceKey?: string): Promise<void> {
+    if (!workspaceKey) throw new Error('workspaceKey is required')
+    return this.runner.interrupt(taskId, workspaceKey)
   }
 
   getEvents(taskId: string, since: number, workspaceKey?: string): Promise<{ events: Event[] }> {
@@ -79,6 +92,29 @@ export class BuddyCoreService {
 
   updateGlobalSettings(settings: GlobalSettings): Promise<GlobalSettings> {
     return this.store.updateGlobalSettings(settings)
+  }
+
+  async recoverInterruptedRuns(): Promise<void> {
+    const tasks = await this.store.getTasks()
+    for (const task of tasks) {
+      if (task.status.startsWith('RUNNING_')) {
+        const event = await this.store.appendTaskEvent(task.task_id, task.workspace_key, {
+          type: 'actor.interrupted',
+          payload: { reason: 'app_restarted' }
+        })
+        await this.store.updateTaskState(task.task_id, task.workspace_key, (state) => ({
+          ...state,
+          status: 'PAUSED',
+          active_run: null,
+          updated_at: new Date().toISOString()
+        }))
+        this.events?.publish({
+          workspace_key: task.workspace_key,
+          task_id: task.task_id,
+          event
+        })
+      }
+    }
   }
 }
 

@@ -1,0 +1,13 @@
+const PATTERNS = [
+  /sk-ant-[A-Za-z0-9_-]{20,}/g,
+  /sk-[A-Za-z0-9_-]{20,}/g,
+  /AKIA[0-9A-Z]{16}/g
+]
+
+export function redactSensitiveText(input: string): string {
+  return PATTERNS.reduce((text, pattern) => text.replace(pattern, '[REDACTED]'), input)
+}
+
+export function redactJsonValue<T>(value: T): T {
+  return JSON.parse(redactSensitiveText(JSON.stringify(value))) as T
+}

@@ -2,13 +2,19 @@ import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron'
 import { WindowManager } from './window-manager'
 import { registerBuddyHandlers } from './ipc/buddy-handlers'
 import { BuddyCoreService } from './buddy/service'
+import { BuddyEventBus } from './buddy/events'
 
 const windowManager = new WindowManager()
-const buddyService = new BuddyCoreService()
+const buddyEvents = new BuddyEventBus()
+const buddyService = new BuddyCoreService({ events: buddyEvents })
 
 registerBuddyHandlers(ipcMain, buddyService)
+buddyEvents.subscribe((event) => {
+  windowManager.getMainWindow()?.webContents.send('buddy:event', event)
+})
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  await buddyService.recoverInterruptedRuns()
   windowManager.createWindow()
 
   ipcMain.handle('dialog:selectDirectory', async (_event, defaultPath?: string) => {

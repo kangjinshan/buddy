@@ -18,6 +18,7 @@ import type {
   TaskState
 } from '../../shared/types'
 import { createBuddyPaths, taskDir, workspaceKeyForRepo } from './paths'
+import { redactJsonValue } from './redact'
 import { parseEventLine, parseTaskSettings, parseTaskState } from './schemas'
 
 interface TaskMeta {
@@ -149,8 +150,13 @@ export class BuddyStore {
       actor: event.actor,
       payload: event.payload
     }
-    await appendEventLine(this.eventsPath(taskId, workspaceKey), next)
-    return next
+    const redacted = redactJsonValue(next)
+    await appendEventLine(this.eventsPath(taskId, workspaceKey), redacted)
+    return redacted
+  }
+
+  async appendTranscript(taskId: string, workspaceKey: string, text: string): Promise<void> {
+    await atomicAppendText(join(this.taskDirectory(taskId, workspaceKey), 'transcript.md'), text)
   }
 
   taskDirectory(taskId: string, workspaceKey: string): string {
@@ -219,6 +225,11 @@ async function atomicWriteText(path: string, value: string): Promise<void> {
 async function appendEventLine(path: string, event: Event): Promise<void> {
   await mkdir(dirname(path), { recursive: true })
   await writeFile(path, `${JSON.stringify(event)}\n`, { flag: 'a' })
+}
+
+async function atomicAppendText(path: string, value: string): Promise<void> {
+  await mkdir(dirname(path), { recursive: true })
+  await writeFile(path, value, { flag: 'a' })
 }
 
 function defaultTaskSettings(overrides?: Record<string, unknown>): TaskSettings {
