@@ -32,8 +32,11 @@ export interface TaskDetail {
 }
 
 export interface TaskState {
+  protocol_version?: string
+  task_id?: string
   status: TaskStatus
   round: number
+  rounds_in_window?: number
   next_actor: string
   countdown?: Countdown
   active_run?: ActiveRun | null
@@ -41,10 +44,14 @@ export interface TaskState {
   codex_thread_id?: string
   opencode_session_id?: string
   kimi_session_id?: string
+  context_hash?: string
+  context_sent?: Record<string, boolean>
   updated_at?: string
   repo_root?: string
   pending_break?: { actor?: string; round?: number } | null
+  last_error?: Failure | null
   latest_failure?: Failure | null
+  consecutive_failures?: number
 }
 
 export interface Countdown {
@@ -55,8 +62,12 @@ export interface Countdown {
 }
 
 export interface ActiveRun {
+  run_id?: string
   actor: string
   started_at: string
+  status?: string
+  session_id_before?: string | null
+  session_id_after?: string | null
 }
 
 export interface TaskSettings {
@@ -68,6 +79,11 @@ export interface TaskSettings {
   implementer_actor?: string
   reviewer_actor?: string
   max_rounds?: number
+  max_consecutive_failures?: number
+  seed_claude_session_id?: string
+  seed_codex_thread_id?: string
+  seed_opencode_session_id?: string
+  seed_kimi_session_id?: string
 }
 
 export interface Launcher {
@@ -96,7 +112,10 @@ export interface Event {
 export interface Failure {
   message: string
   actor?: string
+  run_id?: string
   ts?: string
+  output_file?: string
+  event_file?: string
 }
 
 export interface HealthResponse {

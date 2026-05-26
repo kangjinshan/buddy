@@ -6,6 +6,7 @@ import {
   rm,
   writeFile
 } from 'node:fs/promises'
+import { createHash } from 'node:crypto'
 import { dirname, join } from 'node:path'
 import type {
   CreateTaskInput,
@@ -28,6 +29,8 @@ interface TaskMeta {
   task_text?: string
   context_text?: string
 }
+
+const ACTORS = ['claude', 'codex', 'opencode', 'kimi'] as const
 
 export class BuddyStore {
   constructor(public readonly dataRoot: string) {}
@@ -76,7 +79,7 @@ export class BuddyStore {
       context_text: meta.context_text ?? '',
       transcript: await this.readTranscript(taskId, workspaceKey),
       events,
-      latest_failure: state.latest_failure ?? null
+      latest_failure: state.latest_failure ?? state.last_error ?? null
     }
   }
 
@@ -93,9 +96,11 @@ export class BuddyStore {
 
     const globalSettings = await this.readGlobalSettings()
 
+    const settings = defaultTaskSettings(globalSettings, input.settings)
+
     await mkdir(join(dir, 'artifacts'), { recursive: true })
-    await atomicWriteJson(join(dir, 'settings.json'), defaultTaskSettings(globalSettings, input.settings))
-    await atomicWriteJson(join(dir, 'state.json'), defaultTaskState(repoRoot, now))
+    await atomicWriteJson(join(dir, 'settings.json'), settings)
+    await atomicWriteJson(join(dir, 'state.json'), defaultTaskState(input.task_id, repoRoot, now, settings))
     await atomicWriteJson(join(dir, 'task.json'), {
       task_text: input.task_text ?? '',
       context_text: input.context_text ?? ''
@@ -389,6 +394,10 @@ function defaultTaskSettings(
     launchers,
     max_rounds: normalizedGlobal.max_rounds,
     max_consecutive_failures: normalizedGlobal.max_consecutive_failures,
+    seed_claude_session_id: '',
+    seed_codex_thread_id: '',
+    seed_opencode_session_id: '',
+    seed_kimi_session_id: '',
     ...restOverrides
   } as TaskSettings
 }
@@ -415,16 +424,34 @@ function isNotFoundError(error: unknown): boolean {
   return typeof error === 'object' && error !== null && 'code' in error && error.code === 'ENOENT'
 }
 
-function defaultTaskState(repoRoot: string, now: string): TaskState {
+function defaultTaskState(taskId: string, repoRoot: string, now: string, settings: TaskSettings): TaskState {
+  const initialActor = settings.implementer_actor
+    || (settings.role_mode === 'codex_implements' ? 'codex' : 'claude')
   return {
+    protocol_version: settings.protocol_version ?? '1',
+    task_id: taskId,
     status: 'READY',
-    round: 1,
-    next_actor: 'claude',
+    round: 0,
+    rounds_in_window: 0,
+    next_actor: initialActor,
     active_run: null,
     updated_at: now,
     repo_root: repoRoot,
-    pending_break: null
+    claude_session_id: undefined,
+    codex_thread_id: undefined,
+    opencode_session_id: undefined,
+    kimi_session_id: undefined,
+    context_hash: hashText(''),
+    context_sent: Object.fromEntries(ACTORS.map((actor) => [actor, false])),
+    pending_break: null,
+    last_error: null,
+    latest_failure: null,
+    consecutive_failures: 0
   }
+}
+
+function hashText(text: string): string {
+  return createHash('sha256').update(text, 'utf8').digest('hex')
 }
 
 function initialTranscript(input: CreateTaskInput, now: string): string {
