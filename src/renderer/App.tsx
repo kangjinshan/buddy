@@ -138,7 +138,7 @@ export default function App() {
       }
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : String(error)
-      // Extract API error message from axios error
+      // Extract structured backend error details when available.
       const apiMsg = (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail || msg
       window.alert(t('modal.create.failed', { message: apiMsg }))
     }
