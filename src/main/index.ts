@@ -1,35 +1,10 @@
 import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron'
 import { WindowManager } from './window-manager'
-import {
-  BuddyHandlerService,
-  registerBuddyHandlers
-} from './ipc/buddy-handlers'
+import { registerBuddyHandlers } from './ipc/buddy-handlers'
+import { BuddyCoreService } from './buddy/service'
 
 const windowManager = new WindowManager()
-const notImplemented = async (): Promise<never> => {
-  throw new Error('Native Buddy Core is not implemented yet')
-}
-
-const buddyService: BuddyHandlerService = {
-  checkHealth: async () => true,
-  bootstrap: async () => ({
-    version: 'native',
-    repo_root: '',
-    data_root: '',
-    tasks: []
-  }),
-  getTasks: async () => [],
-  getTaskDetail: notImplemented,
-  createTask: notImplemented,
-  deleteTask: notImplemented,
-  startTask: notImplemented,
-  sendMessage: notImplemented,
-  skipCountdown: notImplemented,
-  pauseCountdown: notImplemented,
-  interrupt: notImplemented,
-  getEvents: async () => ({ events: [] }),
-  updateGlobalSettings: async (settings) => settings
-}
+const buddyService = new BuddyCoreService()
 
 registerBuddyHandlers(ipcMain, buddyService)
 
