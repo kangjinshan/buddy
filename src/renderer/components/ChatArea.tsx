@@ -31,7 +31,7 @@ export function ChatArea({ task, onSendMessage, onStartTask, onInterrupt, autoSt
   const isReady = isTaskReadyToStart(task?.state)
   const hasTranscript = (task?.transcript?.length ?? 0) > 0
   const taskText = (task?.task_text || '').trim()
-  const showTaskBrief = !!taskText && !hasTranscript
+  const showTaskBrief = !!task && !!taskText
 
   return (
     <div className="flex-1 flex flex-col bg-bg-elevated min-w-0">
@@ -46,12 +46,16 @@ export function ChatArea({ task, onSendMessage, onStartTask, onInterrupt, autoSt
         ) : (
           <>
             {showTaskBrief && (
-              <div className="task-brief mb-3 rounded-lg border border-border-subtle bg-bg px-4 py-3">
-                <div className="text-xs font-medium text-fg-muted mb-2">{t('chat.taskBrief')}</div>
-                <div
-                  className="text-sm leading-relaxed text-fg"
-                  dangerouslySetInnerHTML={{ __html: renderMarkdown(taskText) }}
-                />
+              <div className="flex mb-3 justify-start">
+                <div className="message task-brief-card w-full">
+                  <div className="message-head">
+                    <span className="role">{t('chat.taskBrief')}</span>
+                  </div>
+                  <div
+                    className="message-body"
+                    dangerouslySetInnerHTML={{ __html: renderMarkdown(taskText) }}
+                  />
+                </div>
               </div>
             )}
             {!hasTranscript && !isRunning && (

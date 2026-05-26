@@ -103,6 +103,42 @@ body {
   border-left-color: var(--border);
 }
 
+/* ===== 任务说明卡片：固定白底深字，不随暗色主题变化 ===== */
+.task-brief-card {
+  background: #ffffff;
+  border-color: #e5e5e2;
+  border-left-color: #9a9a93;
+  color: #1c1c1a;
+}
+.task-brief-card .message-head { color: #6b6b66; }
+.task-brief-card .role { color: #6b6b66; }
+.task-brief-card .message-body { color: #1c1c1a; }
+.task-brief-card .message-body a { color: #1c1c1a; }
+.task-brief-card .message-body code {
+  background: #ececea;
+  color: #1c1c1a;
+}
+.task-brief-card .message-body pre {
+  background: #f3f3f1;
+  border-color: #ededea;
+  color: #1c1c1a;
+}
+.task-brief-card .message-body blockquote {
+  border-left-color: #e5e5e2;
+  color: #6b6b66;
+}
+.task-brief-card .message-body th {
+  background: #ececea;
+  color: #1c1c1a;
+}
+.task-brief-card .message-body th,
+.task-brief-card .message-body td {
+  border-color: #e5e5e2;
+}
+.task-brief-card .message-body hr {
+  border-top-color: #e5e5e2;
+}
+
 .message .message-head {
   display: flex;
   justify-content: space-between;
@@ -299,4 +335,29 @@ body {
 @keyframes hint-fade {
   0%, 100% { opacity: 0.6; }
   50% { opacity: 1; }
+}
+
+/* ===== 浅色滚动条 ===== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.04);
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.09);
 }
