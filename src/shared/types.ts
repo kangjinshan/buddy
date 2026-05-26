@@ -44,10 +44,11 @@ export interface TaskState {
   updated_at?: string
   repo_root?: string
   pending_break?: { actor?: string } | null
+  latest_failure?: Failure | null
 }
 
 export interface Countdown {
-  status: 'running' | 'paused' | 'elapsed' | 'skipped'
+  status: 'running' | 'paused' | 'elapsed' | 'skipped' | 'expired'
   remaining: number
   default_next_actor: string
   deadline?: string

@@ -1,3 +1,5 @@
+import { homedir } from 'node:os'
+import { join } from 'node:path'
 import type {
   BootstrapResponse,
   CountdownInput,
@@ -10,8 +12,15 @@ import type {
   Task,
   TaskDetail
 } from '../../shared/types'
+import { BuddyStore } from './store'
 
 export class BuddyCoreService {
+  private readonly store: BuddyStore
+
+  constructor(dataRoot = defaultDataRoot()) {
+    this.store = new BuddyStore(dataRoot)
+  }
+
   async checkHealth(): Promise<boolean> {
     return true
   }
@@ -20,25 +29,27 @@ export class BuddyCoreService {
     return {
       version: 'native',
       repo_root: '',
-      data_root: '',
-      tasks: []
+      data_root: this.store.dataRoot,
+      tasks: await this.store.getTasks()
     }
   }
 
-  async getTasks(): Promise<Task[]> {
-    return []
+  getTasks(): Promise<Task[]> {
+    return this.store.getTasks()
   }
 
-  async getTaskDetail(_taskId: string, _workspaceKey?: string): Promise<TaskDetail> {
-    throw new Error('Task detail store is not implemented yet')
+  getTaskDetail(taskId: string, workspaceKey?: string): Promise<TaskDetail> {
+    if (!workspaceKey) throw new Error('workspaceKey is required')
+    return this.store.getTaskDetail(taskId, workspaceKey)
   }
 
-  async createTask(_input: CreateTaskInput): Promise<CreateTaskResult> {
-    throw new Error('Task creation is not implemented yet')
+  createTask(input: CreateTaskInput): Promise<CreateTaskResult> {
+    return this.store.createTask(input)
   }
 
-  async deleteTask(_taskId: string, _workspaceKey?: string): Promise<void> {
-    throw new Error('Task deletion is not implemented yet')
+  deleteTask(taskId: string, workspaceKey?: string): Promise<void> {
+    if (!workspaceKey) throw new Error('workspaceKey is required')
+    return this.store.deleteTask(taskId, workspaceKey)
   }
 
   async startTask(_taskId: string, _input: StartTaskInput): Promise<void> {
@@ -61,11 +72,16 @@ export class BuddyCoreService {
     throw new Error('Interrupt is not implemented yet')
   }
 
-  async getEvents(_taskId: string, _since: number, _workspaceKey?: string): Promise<{ events: Event[] }> {
-    return { events: [] }
+  getEvents(taskId: string, since: number, workspaceKey?: string): Promise<{ events: Event[] }> {
+    if (!workspaceKey) throw new Error('workspaceKey is required')
+    return this.store.getEvents(taskId, since, workspaceKey)
   }
 
-  async updateGlobalSettings(settings: GlobalSettings): Promise<GlobalSettings> {
-    return settings
+  updateGlobalSettings(settings: GlobalSettings): Promise<GlobalSettings> {
+    return this.store.updateGlobalSettings(settings)
   }
+}
+
+function defaultDataRoot(): string {
+  return join(homedir(), 'Library', 'Application Support', 'buddy')
 }
