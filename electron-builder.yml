@@ -12,8 +12,14 @@ mac:
   entitlementsInherit: build/entitlements.mac.inherit.plist
   notarize: true
   target:
-    - dmg
-    - zip
+    - target: dmg
+      arch:
+        - arm64
+        - x64
+    - target: zip
+      arch:
+        - arm64
+        - x64
 dmg:
   contents:
     - x: 130
