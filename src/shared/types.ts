@@ -121,3 +121,47 @@ export interface GlobalSettings {
   max_consecutive_failures?: number
   launchers?: Record<string, Launcher>
 }
+
+export interface BuddyError {
+  code: string
+  message: string
+  details?: unknown
+  recoverable?: boolean
+}
+
+export interface TaskEventEnvelope {
+  workspace_key: string
+  task_id: string
+  event: Event
+}
+
+export interface CreateTaskInput {
+  task_id: string
+  repo_root?: string
+  task_text?: string
+  context_text?: string
+  settings?: Record<string, unknown>
+}
+
+export interface CreateTaskResult {
+  task: string
+  path: string
+  workspace_key: string
+}
+
+export interface StartTaskInput {
+  actor?: string
+  message?: string
+  workspace_key?: string
+}
+
+export interface SendMessageInput {
+  actor?: string
+  message?: string
+  workspace_key?: string
+}
+
+export interface CountdownInput {
+  next_actor?: string
+  workspace_key?: string
+}
