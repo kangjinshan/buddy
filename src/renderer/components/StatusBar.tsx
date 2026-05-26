@@ -1,16 +1,21 @@
 import { useEffect, useState } from 'react'
-import { TaskState, TaskSettings, Event } from '../../shared/types'
+import { Copy, Play, RotateCw } from 'lucide-react'
+import { TaskState, TaskSettings, TaskStatus, Event, Failure } from '../../shared/types'
 import { ResizeHandle } from './ResizeHandle'
 import {
-  ACTOR_TEXT,
   ACTOR_DISPLAY_NAME,
+  ACTOR_LABEL_KEY,
   Actor,
   taskActors,
   shortId,
   elapsedText,
   formatTime,
-  decodeErrorText
+  decodeErrorText,
+  eventPayloadSummary
 } from '../lib/format'
+import { useLanguage, useT } from '../hooks/useI18n'
+import type { TFunction } from '../hooks/useI18n'
+import type { Language, TranslationKey } from '../lib/i18n'
 
 interface StatusBarProps {
   isOpen: boolean
@@ -18,10 +23,35 @@ interface StatusBarProps {
   taskState: TaskState | null
   taskSettings: TaskSettings | null
   events: Event[]
+  latestFailure: Failure | null
   onSkipCountdown: () => void
   onPauseCountdown: () => void
   onInterrupt: () => void
+  onRetry: () => void
+  onResume: () => void
   onResize: (delta: number) => void
+}
+
+const STATUS_KEYS: Record<TaskStatus, TranslationKey> = {
+  READY: 'status.READY',
+  RUNNING_CLAUDE: 'status.RUNNING_CLAUDE',
+  RUNNING_CODEX: 'status.RUNNING_CODEX',
+  RUNNING_OPENCODE: 'status.RUNNING_OPENCODE',
+  RUNNING_KIMI: 'status.RUNNING_KIMI',
+  COUNTDOWN: 'status.COUNTDOWN',
+  PAUSED: 'status.PAUSED',
+  FAILED: 'status.FAILED',
+  DONE: 'status.DONE'
+}
+
+function statusClass(status: TaskStatus | undefined): string {
+  if (!status) return 'neutral'
+  if (status === 'COUNTDOWN' || status === 'READY') return 'ready'
+  if (status.startsWith('RUNNING_')) return 'running'
+  if (status === 'FAILED') return 'danger'
+  if (status === 'PAUSED') return 'paused'
+  if (status === 'DONE') return 'done'
+  return 'neutral'
 }
 
 const SESSION_FIELD: Record<Actor, keyof TaskState> = {
@@ -37,11 +67,17 @@ export function StatusBar({
   taskState,
   taskSettings,
   events,
+  latestFailure,
   onSkipCountdown,
   onPauseCountdown,
-  onInterrupt,
+  onInterrupt: _onInterrupt,
+  onRetry,
+  onResume,
   onResize
 }: StatusBarProps) {
+  const t = useT()
+  const lang = useLanguage()
+  void _onInterrupt
   // 1s tick 让耗时/倒计时随时间走
   const [, setTick] = useState(0)
   useEffect(() => {
@@ -59,6 +95,17 @@ export function StatusBar({
   const runningActor = activeRun?.actor || ''
   const pendingBreak = taskState?.pending_break || null
 
+  const completedRound = taskState?.round ?? 0
+  const roundLabel = taskState
+    ? isRunning
+      ? t('statusBar.roundInProgress', { n: completedRound + 1 })
+      : t('statusBar.roundCompleted', { n: completedRound })
+    : t('statusBar.roundDash')
+
+  const updatedText = taskState?.updated_at
+    ? formatTime(taskState.updated_at, lang)
+    : t('statusBar.updatedWaiting')
+
   return (
     <div className="flex h-full">
       <ResizeHandle direction="left" onResize={onResize} />
@@ -69,11 +116,21 @@ export function StatusBar({
         {/* 运行状态 */}
         <section className="p-4 border-b border-border">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-semibold">运行状态</h3>
+            <h3 className="text-sm font-semibold">{t('statusBar.runStatus')}</h3>
           </div>
+
+          <TaskStatusBanner
+            status={taskState?.status}
+            failure={latestFailure}
+            onRetry={onRetry}
+            onResume={onResume}
+            t={t}
+            lang={lang}
+          />
+
           <div className="flex items-center gap-3 text-xs text-fg-secondary mb-3">
-            <span>轮次：{taskState?.round ?? '-'}</span>
-            <span>更新：{taskState?.updated_at ? formatTime(taskState.updated_at) : '等待加载'}</span>
+            <span>{roundLabel}</span>
+            <span>{t('statusBar.updated', { time: updatedText })}</span>
           </div>
 
           <div className="space-y-2">
@@ -84,6 +141,7 @@ export function StatusBar({
                 taskState={taskState}
                 running={runningActor === actor}
                 pendingBreak={pendingBreak}
+                t={t}
               />
             ))}
           </div>
@@ -93,13 +151,16 @@ export function StatusBar({
             <div className="mt-3 p-3 rounded-lg bg-bg-subtle flex items-center justify-between">
               <div>
                 <div className="text-sm font-medium">
-                  {taskState.countdown.deadline
-                    ? `${Math.max(0, Math.ceil((new Date(taskState.countdown.deadline).getTime() - Date.now()) / 1000))} 秒后继续`
-                    : `${Math.max(0, Math.ceil(taskState.countdown.remaining ?? 0))} 秒后继续`
-                  }
+                  {t('statusBar.continueIn', {
+                    n: taskState.countdown.deadline
+                      ? Math.max(0, Math.ceil((new Date(taskState.countdown.deadline).getTime() - Date.now()) / 1000))
+                      : Math.max(0, Math.ceil(taskState.countdown.remaining ?? 0))
+                  })}
                 </div>
                 <div className="text-xs text-fg-secondary mt-0.5">
-                  下一轮：{ACTOR_TEXT[taskState.countdown.default_next_actor || taskState.next_actor] || '-'}
+                  {t('statusBar.nextRound', {
+                    actor: actorLabel(taskState.countdown.default_next_actor || taskState.next_actor, t)
+                  })}
                 </div>
               </div>
               <div className="flex gap-2">
@@ -107,13 +168,13 @@ export function StatusBar({
                   onClick={onPauseCountdown}
                   className="px-2 py-1 text-xs bg-bg-muted text-fg rounded hover:bg-bg-subtle"
                 >
-                  暂停
+                  {t('common.pause')}
                 </button>
                 <button
                   onClick={onSkipCountdown}
                   className="px-2 py-1 text-xs bg-accent text-fg-inverse rounded hover:bg-accent-hover"
                 >
-                  跳过
+                  {t('common.skip')}
                 </button>
               </div>
             </div>
@@ -124,47 +185,129 @@ export function StatusBar({
         {/* 任务设置 */}
         <details open className="border-b border-border">
           <summary className="px-4 py-3 text-sm font-semibold cursor-pointer flex items-center justify-between hover:bg-bg-subtle select-none">
-            <span>任务设置</span>
-            <span className="text-xs font-normal text-fg-secondary">收起</span>
+            <span>{t('statusBar.taskSettings')}</span>
+            <span className="text-xs font-normal text-fg-secondary">{t('common.collapse')}</span>
           </summary>
-          <SettingsSummary settings={taskSettings} taskState={taskState} />
+          <SettingsSummary settings={taskSettings} taskState={taskState} t={t} />
         </details>
 
         {/* 过程事件 */}
         <details open className="border-b border-border">
           <summary className="px-4 py-3 text-sm font-semibold cursor-pointer flex items-center justify-between hover:bg-bg-subtle select-none">
-            <span>过程事件</span>
-            <span className="text-xs font-normal text-fg-secondary">收起</span>
+            <span>{t('statusBar.events')}</span>
+            <span className="text-xs font-normal text-fg-secondary">{t('common.collapse')}</span>
           </summary>
-          <EventLog events={events} />
+          <EventLog events={events} t={t} lang={lang} />
         </details>
       </div>
     </div>
   )
 }
 
+function actorLabel(actor: string | undefined, t: TFunction): string {
+  if (!actor) return '-'
+  return ACTOR_LABEL_KEY[actor] ? t(ACTOR_LABEL_KEY[actor]) : actor
+}
+
+function TaskStatusBanner({
+  status,
+  failure,
+  onRetry,
+  onResume,
+  t,
+  lang
+}: {
+  status: TaskStatus | undefined
+  failure: Failure | null
+  onRetry: () => void
+  onResume: () => void
+  t: TFunction
+  lang: Language
+}) {
+  const cls = statusClass(status)
+  const text = status ? t(STATUS_KEYS[status]) : t('statusBar.statusLoading')
+  const isRunning = status?.startsWith('RUNNING_') ?? false
+  const isFailed = status === 'FAILED'
+  const isPaused = status === 'PAUSED'
+  const failureSnippet = isFailed && failure?.message
+    ? truncate(decodeErrorText(failure.message), 240)
+    : ''
+  const failureActor = failure?.actor ? actorLabel(failure.actor, t) : ''
+  const failureWhen = failure?.ts ? formatTime(failure.ts, lang) : ''
+
+  return (
+    <div className={`mb-3 rounded-lg border ${isFailed ? 'border-danger bg-bg-subtle' : 'border-border-subtle bg-bg-subtle'}`}>
+      <div className="flex items-center justify-between gap-2 px-3 py-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className={`status-dot status-dot-${cls} ${isRunning ? 'status-dot-pulse' : ''}`} />
+          <span className={`text-sm font-medium status-text-${cls}`}>{text}</span>
+        </div>
+        {isFailed && (
+          <button
+            onClick={onRetry}
+            title={t('statusBar.tooltipRetry')}
+            className="px-2.5 py-1 text-xs bg-accent text-fg-inverse rounded flex items-center gap-1.5 hover:bg-accent-hover flex-shrink-0"
+          >
+            <RotateCw size={12} strokeWidth={2.5} />
+            {t('common.retry')}
+          </button>
+        )}
+        {isPaused && (
+          <button
+            onClick={onResume}
+            title={t('statusBar.tooltipResume')}
+            className="px-2.5 py-1 text-xs bg-accent text-fg-inverse rounded flex items-center gap-1.5 hover:bg-accent-hover flex-shrink-0"
+          >
+            <Play size={12} strokeWidth={2.5} fill="currentColor" />
+            {t('common.resume')}
+          </button>
+        )}
+      </div>
+      {isFailed && failureSnippet && (
+        <div className="px-3 pb-2 text-xs text-fg-secondary">
+          {(failureActor || failureWhen) && (
+            <div className="text-fg-muted mb-1">
+              {failureActor}{failureActor && failureWhen ? ' · ' : ''}{failureWhen}
+            </div>
+          )}
+          <pre className="whitespace-pre-wrap break-words font-sans leading-relaxed">
+            {failureSnippet}
+          </pre>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function truncate(text: string, max: number): string {
+  if (text.length <= max) return text
+  return `${text.slice(0, max).trimEnd()}…`
+}
+
 function ActorCard({
   actor,
   taskState,
   running,
-  pendingBreak
+  pendingBreak,
+  t
 }: {
   actor: Actor
   taskState: TaskState | null
   running: boolean
   pendingBreak: { actor?: string } | null
+  t: TFunction
 }) {
   const sessionField = SESSION_FIELD[actor]
   const session = (taskState?.[sessionField] as string | undefined) || ''
   const isRunningStatus = taskState?.status === `RUNNING_${actor.toUpperCase()}`
   const confirmNeeded = pendingBreak && pendingBreak.actor !== actor
   const stateText = isRunningStatus
-    ? '运行中'
+    ? t('statusBar.actor.running')
     : confirmNeeded
-      ? '待确认结束'
+      ? t('statusBar.actor.confirmEnd')
       : session
-        ? '已绑定会话'
-        : '空闲'
+        ? t('statusBar.actor.bound')
+        : t('statusBar.actor.idle')
 
   const stateBadgeClass = isRunningStatus
     ? 'bg-success-bg text-success-fg'
@@ -184,22 +327,19 @@ function ActorCard({
         <span className={`text-xs px-2 py-0.5 rounded ${stateBadgeClass}`}>{stateText}</span>
       </div>
       <div className="flex items-center gap-1 text-xs text-fg-secondary">
-        <span>会话：{session ? shortId(session) : '未绑定'}</span>
+        <span>{t('statusBar.actor.session', { id: session ? shortId(session) : t('common.unbound') })}</span>
         {session && (
           <button
             onClick={handleCopy}
-            title="复制会话 ID"
+            title={t('statusBar.actor.copy')}
             className="w-5 h-5 flex items-center justify-center rounded text-fg-muted hover:text-fg hover:bg-bg-muted"
           >
-            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="9" y="9" width="13" height="13" rx="2" />
-              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-            </svg>
+            <Copy size={12} strokeWidth={2} />
           </button>
         )}
       </div>
       <div className="text-xs text-fg-secondary mt-0.5">
-        耗时：{running ? elapsedText(taskState?.active_run?.started_at) : '-'}
+        {t('statusBar.actor.elapsed', { elapsed: running ? elapsedText(taskState?.active_run?.started_at) : '-' })}
       </div>
     </div>
   )
@@ -207,17 +347,19 @@ function ActorCard({
 
 function SettingsSummary({
   settings,
-  taskState
+  taskState,
+  t
 }: {
   settings: TaskSettings | null
   taskState: TaskState | null
+  t: TFunction
 }) {
   const launchers = settings?.launchers || {}
   const hasCommands = Boolean(
     launchers.claude?.command && (launchers.codex?.command || launchers.opencode?.command)
   )
   const { impl, rev, participants } = taskActors(settings)
-  const display = (v?: string) => (v ? ACTOR_TEXT[v] || v : '-')
+  const display = (v?: string) => actorLabel(v, t)
   const repoRoot = taskState?.repo_root || '-'
 
   const isRunningInSettings = taskState?.status?.startsWith('RUNNING_') ?? false
@@ -232,13 +374,13 @@ function SettingsSummary({
   })()
 
   const rows: Array<[string, string]> = [
-    ['执行方', display(impl)],
-    ['Reviewer', display(rev)],
-    ['工作目录', repoRoot],
-    ['启动命令', hasCommands ? '自定义命令' : '-'],
-    ['倒计时', `${settings?.countdown_seconds ?? 30}s`],
-    ['自动轮次', String(settings?.max_rounds ?? 10)],
-    ['下一轮', display(nextActorDisplay)]
+    [t('statusBar.summary.implementer'), display(impl)],
+    [t('statusBar.summary.reviewer'), display(rev)],
+    [t('statusBar.summary.repoRoot'), repoRoot],
+    [t('statusBar.summary.launchCmd'), hasCommands ? t('statusBar.summary.launchCmdCustom') : '-'],
+    [t('statusBar.summary.countdown'), `${settings?.countdown_seconds ?? 30}s`],
+    [t('statusBar.summary.maxRounds'), String(settings?.max_rounds ?? 10)],
+    [t('statusBar.summary.nextRound'), display(nextActorDisplay)]
   ]
 
   return (
@@ -253,9 +395,9 @@ function SettingsSummary({
   )
 }
 
-function EventLog({ events }: { events: Event[] }) {
+function EventLog({ events, t, lang }: { events: Event[]; t: TFunction; lang: Language }) {
   if (!events.length) {
-    return <div className="px-4 pb-4 text-xs text-fg-muted">暂无事件。</div>
+    return <div className="px-4 pb-4 text-xs text-fg-muted">{t('statusBar.eventsEmpty')}</div>
   }
   const recent = events.slice(-10).reverse()
   return (
@@ -265,7 +407,7 @@ function EventLog({ events }: { events: Event[] }) {
           event.type?.endsWith('.failed') ||
           event.type?.endsWith('.error') ||
           Boolean((event.payload || {}).error)
-        const summary = eventPayloadSummary(event)
+        const summary = eventPayloadSummary(event, lang)
         return (
           <div
             key={event.seq}
@@ -275,8 +417,8 @@ function EventLog({ events }: { events: Event[] }) {
               #{event.seq} · {event.type}
             </div>
             <div className="text-xs text-fg-secondary mt-0.5">
-              {formatTime(event.ts)}
-              {event.actor ? ` · ${ACTOR_TEXT[event.actor] || event.actor}` : ''}
+              {formatTime(event.ts, lang)}
+              {event.actor ? ` · ${actorLabel(event.actor, t)}` : ''}
             </div>
             {summary && (
               <pre className="mt-1 text-xs text-fg-secondary bg-bg-subtle rounded p-1.5 whitespace-pre-wrap break-words">
@@ -288,13 +430,4 @@ function EventLog({ events }: { events: Event[] }) {
       })}
     </div>
   )
-}
-
-function eventPayloadSummary(event: Event): string {
-  const payload = event.payload || {}
-  const value = (payload.error as string | undefined) || (payload.text as string | undefined) || ''
-  if (!value) return ''
-  const raw = typeof value === 'string' ? value : JSON.stringify(value)
-  const text = decodeErrorText(raw)
-  return text.length > 1200 ? `${text.slice(0, 1200).trimEnd()}\n...（已截断）` : text
 }

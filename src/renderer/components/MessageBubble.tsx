@@ -1,6 +1,7 @@
 import { TranscriptEntry } from '../../shared/types'
 import { renderMarkdown } from '../lib/markdown'
-import { formatDuration, formatTime, decodeErrorText } from '../lib/format'
+import { formatDuration, formatTime, decodeErrorText, ACTOR_LABEL_KEY } from '../lib/format'
+import { useLanguage, useT } from '../hooks/useI18n'
 
 interface MessageBubbleProps {
   entry: TranscriptEntry
@@ -15,18 +16,9 @@ const roleClasses: Record<string, string> = {
   system: 'msg-system'
 }
 
-function formatMessageMeta(entry: TranscriptEntry): string {
-  const meta = entry.meta || ({} as Record<string, unknown>)
-  const parts: string[] = []
-  const round = meta.round as number | undefined
-  const elapsedMs = meta.elapsed_ms as number | null | undefined
-  if (round) parts.push(`第 ${round} 轮`)
-  if (elapsedMs != null) parts.push(formatDuration(elapsedMs))
-  if (entry.ts) parts.push(formatTime(entry.ts))
-  return parts.join(' · ')
-}
-
 export function MessageBubble({ entry }: MessageBubbleProps) {
+  const t = useT()
+  const lang = useLanguage()
   const isSystem = entry.role === 'system'
   const isHuman = entry.role === 'human'
   const meta = entry.meta || ({} as Record<string, unknown>)
@@ -44,13 +36,19 @@ export function MessageBubble({ entry }: MessageBubbleProps) {
 
   const html = renderMarkdown(entry.content)
   const cls = roleClasses[entry.role] || 'msg-default'
-  const metaText = formatMessageMeta(entry)
+  const metaText = formatMessageMeta(entry, lang)
+
+  const roleLabel = isRoundNotice
+    ? t('actor.systemNotice')
+    : ACTOR_LABEL_KEY[entry.role]
+      ? t(ACTOR_LABEL_KEY[entry.role])
+      : entry.role
 
   return (
     <div className={`flex mb-3 ${isHuman ? 'justify-end' : 'justify-start'}`}>
       <div className={`message ${cls} ${isRoundNotice ? 'round-notice' : ''} ${isHuman ? 'max-w-[82%]' : 'w-full'}`}>
         <div className="message-head">
-          <span className="role">{isRoundNotice ? '系统通知' : formatRole(entry.role)}</span>
+          <span className="role">{roleLabel}</span>
           {metaText && <span>{metaText}</span>}
         </div>
         <div
@@ -62,13 +60,20 @@ export function MessageBubble({ entry }: MessageBubbleProps) {
   )
 }
 
-function formatRole(role: string): string {
-  const roleMap: Record<string, string> = {
-    human: '你',
-    claude: 'Claude',
-    codex: 'Codex',
-    opencode: 'OpenCode',
-    kimi: 'Kimi'
+function formatMessageMeta(entry: TranscriptEntry, lang: ReturnType<typeof useLanguage>): string {
+  const meta = entry.meta || ({} as Record<string, unknown>)
+  const parts: string[] = []
+  const round = meta.round as number | undefined
+  const elapsedMs = meta.elapsed_ms as number | null | undefined
+  const isRoundNotice = entry.role === 'system' && meta.kind === 'round_notice'
+  if (round && !isRoundNotice) {
+    const roundLabel =
+      lang === 'en' ? `Round ${round}`
+        : lang === 'zh-TW' ? `第 ${round} 輪`
+          : `第 ${round} 轮`
+    parts.push(roundLabel)
   }
-  return roleMap[role] || role
+  if (elapsedMs != null) parts.push(formatDuration(elapsedMs))
+  if (entry.ts) parts.push(formatTime(entry.ts, lang))
+  return parts.join(' · ')
 }

@@ -4,6 +4,7 @@ import { MessageBubble } from './MessageBubble'
 import { RunningStatusMessage } from './RunningStatusMessage'
 import { Composer } from './Composer'
 import { renderMarkdown } from '../lib/markdown'
+import { useT } from '../hooks/useI18n'
 
 interface ChatAreaProps {
   task: TaskDetail | null
@@ -16,6 +17,7 @@ interface ChatAreaProps {
 }
 
 export function ChatArea({ task, onSendMessage, onStartTask, onInterrupt, autoStartSeconds, draft, onDraftChange }: ChatAreaProps) {
+  const t = useT()
   const transcriptRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -35,15 +37,15 @@ export function ChatArea({ task, onSendMessage, onStartTask, onInterrupt, autoSt
         {!task ? (
           <div className="flex items-center justify-center h-full min-h-[60vh]">
             <div className="text-center text-fg-muted">
-              <div className="text-lg font-medium mb-2">选择或创建一个任务</div>
-              <div className="text-sm">在左侧栏选择任务，或创建新任务开始</div>
+              <div className="text-lg font-medium mb-2">{t('chat.empty.title')}</div>
+              <div className="text-sm">{t('chat.empty.desc')}</div>
             </div>
           </div>
         ) : !hasTranscript && !taskText ? (
           <div className="flex items-center justify-center h-full min-h-[60vh]">
             <div className="text-center text-fg-muted">
-              <div className="text-lg font-medium mb-2">任务已创建</div>
-              <div className="text-sm">点击下方"开始"让 AI 开始工作</div>
+              <div className="text-lg font-medium mb-2">{t('chat.created.title')}</div>
+              <div className="text-sm">{t('chat.created.desc')}</div>
             </div>
           </div>
         ) : (
@@ -52,7 +54,7 @@ export function ChatArea({ task, onSendMessage, onStartTask, onInterrupt, autoSt
               <div className="flex mb-3 justify-start">
                 <div className="message msg-system w-full">
                   <div className="message-head">
-                    <span className="role">任务说明</span>
+                    <span className="role">{t('chat.taskBrief')}</span>
                   </div>
                   <div
                     className="message-body"

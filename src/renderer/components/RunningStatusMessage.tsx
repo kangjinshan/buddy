@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
+import { ACTOR_LABEL_KEY } from '../lib/format'
+import { useLanguage, useT } from '../hooks/useI18n'
 
-const runningHints = [
+const HINTS_ZH_CN = [
   '解析中', '推理中', '计划中', '执行中', '检索中', '生成中', '校验中', '重构中', '合并中', '收束中',
   '捣鼓中', '整活中', '摸鱼式忙碌 ing', '花里胡哨 ing', '那啥处理 ing', '重新理顺 ing', '脑内翻炒 ing',
   '慢悠悠推进 ing', '小火慢炖 ing', '神秘运转 ing', '开搞 ing', '憋大招 ing', '疯狂脑补 ing',
@@ -13,10 +15,37 @@ const runningHints = [
   '鼓捣猫呢', '倒腾狗呢', '琢磨甩锅呢', '推卸责任呢', '想着怎么赖对方呢',
 ]
 
+const HINTS_ZH_TW = [
+  '解析中', '推理中', '規劃中', '執行中', '檢索中', '生成中', '校驗中', '重構中', '合併中', '收束中',
+  '搗鼓中', '整活中', '摸魚式忙碌 ing', '花裡胡哨 ing', '那啥處理 ing', '重新理順 ing', '腦內翻炒 ing',
+  '慢悠悠推進 ing', '小火慢燉 ing', '神祕運轉 ing', '開搞 ing', '憋大招 ing', '瘋狂腦補 ing',
+  '程式蒸煮 ing', '努力圓回來 ing', 'CPU 乾燒 ing', '正在玄學優化', '這就安排', '問題不大 ing', '馬上就有 ing',
+  '運功 ing', '閉關 ing', '參悟 ing', '推演功法 ing', '煉丹 ing', '淬體 ing', '御劍檢索 ing',
+  '渡劫重構 ing', '破境生成 ing', '正在收功',
+  '正在備料', '正在翻炒', '正在小火慢燉', '正在調味', '正在醃漬', '正在醒麵', '正在烘焙', '正在收汁', '正在裝盤', '正在出鍋',
+  '神經脈衝 ing', '量子擾動 ing', '向量穿梭 ing', '矩陣重排 ing', '正在揮霍 token', '模型共振 ing', '意識載入 ing', '稀裡糊塗 ing',
+  '掀桌子了', '弄亂了', '改花了', '完蛋了', '刪庫了', '跑路了', '舞劍中', '耍大刀呢',
+  '搗鼓貓呢', '倒騰狗呢', '琢磨甩鍋呢', '推卸責任呢', '想著怎麼賴對方呢',
+]
+
+const HINTS_EN = [
+  'Parsing', 'Thinking', 'Planning', 'Executing', 'Searching', 'Generating', 'Validating', 'Refactoring', 'Merging', 'Wrapping up',
+  'Tinkering', 'Improvising', 'Pretending to be busy', 'Adding flair', 'Doing the thing', 'Sorting it out', 'Cooking ideas',
+  'Pondering slowly', 'Simmering on low', 'Mysteriously working', 'Getting started', 'Charging up', 'Hallucinating responsibly',
+  'Stewing the code', 'Squaring the circle', 'CPU on fire', 'Trying mystic tweaks', 'On it', 'Should be fine', 'Almost there',
+  'Channeling energy', 'In meditation', 'Studying scripture', 'Practicing form', 'Brewing elixir', 'Tempering body', 'Sword-flying through search',
+  'Surviving tribulation refactor', 'Breaking through generation', 'Closing the form',
+  'Prepping ingredients', 'Stir-frying', 'Slow simmering', 'Seasoning', 'Marinating', 'Resting the dough', 'Baking', 'Reducing sauce', 'Plating', 'Out of the wok',
+  'Neural pulses', 'Quantum jitter', 'Vector hopping', 'Matrix shuffling', 'Burning tokens', 'Model resonance', 'Loading consciousness', 'Slightly confused',
+  'Flipped the table', 'Made a mess', 'Painted it weird', "It's over", 'Dropped the DB', 'Ran away', 'Sword dance', 'Brandishing blades',
+  'Petting the cat', 'Wrangling the dog', 'Plotting blame', 'Dodging responsibility', 'Drafting an excuse',
+]
+
 const dotsPhases = ['', '.', '..', '...']
 
-function pickRandomHint(): string {
-  return runningHints[Math.floor(Math.random() * runningHints.length)]
+function pickHint(lang: 'zh-CN' | 'zh-TW' | 'en'): string {
+  const bank = lang === 'en' ? HINTS_EN : lang === 'zh-TW' ? HINTS_ZH_TW : HINTS_ZH_CN
+  return bank[Math.floor(Math.random() * bank.length)]
 }
 
 function formatElapsed(startedAt: string): string {
@@ -40,16 +69,17 @@ function actorClass(actor: string): string {
   return 'msg-default'
 }
 
-function actorLabel(actor: string): string {
-  const map: Record<string, string> = { claude: 'Claude', codex: 'Codex', opencode: 'OpenCode', kimi: 'Kimi' }
-  return map[actor] || actor
-}
-
-export function RunningStatusMessage({ actor, startedAt, round }: { actor: string; startedAt: string; round?: number }) {
-  const [hint, setHint] = useState(pickRandomHint)
+export function RunningStatusMessage({ actor, startedAt }: { actor: string; startedAt: string; round?: number }) {
+  const t = useT()
+  const lang = useLanguage()
+  const [hint, setHint] = useState(() => pickHint(lang))
   const [dots, setDots] = useState(0)
   const [elapsed, setElapsed] = useState(() => formatElapsed(startedAt))
   const tickRef = useRef(0)
+
+  useEffect(() => {
+    setHint(pickHint(lang))
+  }, [lang])
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -57,22 +87,22 @@ export function RunningStatusMessage({ actor, startedAt, round }: { actor: strin
       setDots(prev => (prev + 1) % dotsPhases.length)
       setElapsed(formatElapsed(startedAt))
       if (tickRef.current % 10 === 0) {
-        setHint(pickRandomHint())
+        setHint(pickHint(lang))
       }
     }, 400)
     return () => clearInterval(interval)
-  }, [startedAt])
+  }, [startedAt, lang])
 
-  const metaParts: string[] = []
-  if (round && round > 0) metaParts.push(`第 ${round} 轮`)
-  metaParts.push(`运行中 · ${elapsed}`)
+  const metaText = t('running.metaSuffix', { elapsed })
+
+  const actorLabel = ACTOR_LABEL_KEY[actor] ? t(ACTOR_LABEL_KEY[actor]) : actor
 
   return (
     <div className="flex mb-3 justify-start">
       <div className={`message w-full ${actorClass(actor)} running-status`}>
         <div className="message-head">
-          <span className="role">{actorLabel(actor)}</span>
-          <span>{metaParts.join(' · ')}</span>
+          <span className="role">{actorLabel}</span>
+          <span>{metaText}</span>
         </div>
         <div className="running-status-body">
           {hint}{dotsPhases[dots]}

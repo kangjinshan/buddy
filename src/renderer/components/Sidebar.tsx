@@ -1,7 +1,23 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
-import { Task, TaskStatus, ActiveRun } from '../../shared/types'
+import {
+  ChevronLeft,
+  Ellipsis,
+  Folder,
+  FolderOpen,
+  PanelLeft,
+  Pin,
+  Settings as SettingsIcon,
+  SquarePen,
+  SquarePlus,
+  Sun,
+  Trash2
+} from 'lucide-react'
+import { Task, TaskStatus } from '../../shared/types'
 import { ResizeHandle } from './ResizeHandle'
 import { elapsedText } from '../lib/format'
+import { useT } from '../hooks/useI18n'
+import type { TFunction } from '../hooks/useI18n'
+import type { TranslationKey } from '../lib/i18n'
 
 import type { SettingsTab } from './SettingsContent'
 
@@ -14,16 +30,20 @@ function LiveElapsed({ startedAt }: { startedAt: string }) {
   return <span className="text-accent">{text}</span>
 }
 
-const statusText: Record<TaskStatus, string> = {
-  READY: '就绪',
-  RUNNING_CLAUDE: 'Claude 运行中',
-  RUNNING_CODEX: 'Codex 运行中',
-  RUNNING_OPENCODE: 'OpenCode 运行中',
-  RUNNING_KIMI: 'Kimi 运行中',
-  COUNTDOWN: '倒计时中',
-  PAUSED: '已暂停',
-  FAILED: '失败',
-  DONE: '已完成',
+const STATUS_KEYS: Record<TaskStatus, TranslationKey> = {
+  READY: 'status.READY',
+  RUNNING_CLAUDE: 'status.RUNNING_CLAUDE',
+  RUNNING_CODEX: 'status.RUNNING_CODEX',
+  RUNNING_OPENCODE: 'status.RUNNING_OPENCODE',
+  RUNNING_KIMI: 'status.RUNNING_KIMI',
+  COUNTDOWN: 'status.COUNTDOWN',
+  PAUSED: 'status.PAUSED',
+  FAILED: 'status.FAILED',
+  DONE: 'status.DONE',
+}
+
+function statusText(status: TaskStatus, t: TFunction): string {
+  return t(STATUS_KEYS[status] || 'status.READY')
 }
 
 function statusClass(status: TaskStatus): string {
@@ -84,6 +104,7 @@ export function Sidebar({
   onRemoveProject,
   projectNames
 }: SidebarProps) {
+  const t = useT()
   if (!isOpen) return null
 
   return (
@@ -96,12 +117,9 @@ export function Sidebar({
           <button
             onClick={onToggleSidebar}
             className="w-5 h-5 mt-[4px] flex items-center justify-center rounded hover:bg-bg-muted no-drag"
-            title="收起侧边栏"
+            title={t('sidebar.collapse')}
           >
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="3" y="3" width="18" height="18" rx="3" />
-              <line x1="9" y1="3" x2="9" y2="21" />
-            </svg>
+            <PanelLeft size={14} strokeWidth={2} />
           </button>
         )}
         <div className="flex-1" />
@@ -112,6 +130,7 @@ export function Sidebar({
           settingsTab={settingsTab}
           onSelectSettingsTab={onSelectSettingsTab}
           onBackToApp={onBackToApp}
+          t={t}
         />
       ) : (
         <ChatSidebar
@@ -128,6 +147,7 @@ export function Sidebar({
           onOpenInFinder={onOpenInFinder}
           onRemoveProject={onRemoveProject}
           projectNames={projectNames}
+          t={t}
         />
       )}
     </div>
@@ -139,11 +159,13 @@ export function Sidebar({
 function SettingsSidebar({
   settingsTab,
   onSelectSettingsTab,
-  onBackToApp
+  onBackToApp,
+  t
 }: {
   settingsTab: SettingsTab
   onSelectSettingsTab: (tab: SettingsTab) => void
   onBackToApp: () => void
+  t: TFunction
 }) {
   return (
     <>
@@ -152,39 +174,20 @@ function SettingsSidebar({
           onClick={onBackToApp}
           className="w-full flex items-center gap-2 px-3 py-2 text-sm text-fg-secondary hover:text-fg rounded-lg transition-colors mb-2"
         >
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-          返回应用
+          <ChevronLeft size={14} strokeWidth={2} />
+          {t('sidebar.backToApp')}
         </button>
 
         <SettingsMenuItem
-          label="常规"
-          icon={
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="3" />
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-            </svg>
-          }
+          label={t('settings.tab.general')}
+          icon={<SettingsIcon size={15} strokeWidth={1.7} />}
           active={settingsTab === 'general'}
           onClick={() => onSelectSettingsTab('general')}
         />
 
         <SettingsMenuItem
-          label="外观"
-          icon={
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="5" />
-              <line x1="12" y1="1" x2="12" y2="3" />
-              <line x1="12" y1="21" x2="12" y2="23" />
-              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-              <line x1="1" y1="12" x2="3" y2="12" />
-              <line x1="21" y1="12" x2="23" y2="12" />
-              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-            </svg>
-          }
+          label={t('settings.tab.appearance')}
+          icon={<Sun size={15} strokeWidth={1.7} />}
           active={settingsTab === 'appearance'}
           onClick={() => onSelectSettingsTab('appearance')}
         />
@@ -227,7 +230,8 @@ function ChatSidebar({
   onRenameProject,
   onOpenInFinder,
   onRemoveProject,
-  projectNames
+  projectNames,
+  t
 }: {
   tasks: Task[]
   selectedTaskId: string | null
@@ -242,6 +246,7 @@ function ChatSidebar({
   onOpenInFinder: (path: string) => void
   onRemoveProject: (repoRoot: string) => void
   projectNames: Record<string, string>
+  t: TFunction
 }) {
   const [openMenuRepoRoot, setOpenMenuRepoRoot] = useState<string | null>(null)
   const [renamingRepoRoot, setRenamingRepoRoot] = useState<string | null>(null)
@@ -294,8 +299,8 @@ function ChatSidebar({
   return (
     <>
       <div className="px-4 pt-2 pb-2">
-        <div className="text-xl font-bold">buddy</div>
-        <div className="text-xs text-fg-secondary">Coding Agent 协作台</div>
+        <div className="text-xl font-bold">{t('app.brand')}</div>
+        <div className="text-xs text-fg-secondary">{t('app.tagline')}</div>
       </div>
 
       <div className="px-4 py-2">
@@ -303,40 +308,36 @@ function ChatSidebar({
           onClick={() => onCreateTask()}
           className="w-full px-4 py-2 bg-accent text-fg-inverse rounded-lg hover:bg-accent-hover transition-colors flex items-center justify-center gap-2"
         >
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="3" width="18" height="18" rx="4" />
-            <line x1="12" y1="8" x2="12" y2="16" />
-            <line x1="8" y1="12" x2="16" y2="12" />
-          </svg>
-          新建任务
+          <SquarePlus size={14} strokeWidth={2} />
+          {t('sidebar.newTask')}
         </button>
       </div>
 
       <div className="flex-1 overflow-y-auto overflow-x-hidden px-2">
         {!isHealthy ? (
           <div className="px-2 py-4 text-center text-danger text-sm">
-            <div className="mb-2">buddy 服务未运行</div>
+            <div className="mb-2">{t('sidebar.notHealthy')}</div>
             <div className="text-xs text-fg-muted">
-              请在终端运行: <code className="bg-bg-muted px-1 rounded">buddy</code>
+              {t('sidebar.notHealthyHint')}<code className="bg-bg-muted px-1 rounded">buddy</code>
             </div>
           </div>
         ) : isLoading ? (
           <div className="px-2 py-4 text-center text-fg-muted text-sm">
-            加载中...
+            {t('common.loading')}
           </div>
         ) : error ? (
           <div className="px-2 py-4 text-center text-danger text-sm">
-            加载失败: {error.message}
+            {t('sidebar.loadFailed', { message: error.message })}
           </div>
         ) : Object.keys(groupedTasks).length === 0 && pinnedTasks.length === 0 ? (
           <div className="px-2 py-4 text-center text-fg-muted text-sm">
-            暂无任务
+            {t('sidebar.empty')}
           </div>
         ) : (
           <>
             {pinnedTasks.length > 0 && (
               <>
-                <div className="px-2 pt-2 pb-1 text-xs text-fg-muted font-medium">置顶</div>
+                <div className="px-2 pt-2 pb-1 text-xs text-fg-muted font-medium">{t('sidebar.pinned')}</div>
                 {pinnedTasks.map((task) => {
                   const isSelected = selectedTaskId === task.task_id
                   const isRunning = statusClass(task.status) === 'running'
@@ -365,11 +366,11 @@ function ChatSidebar({
                         </span>
                         <span className="text-xs text-fg-muted truncate max-w-[60px]">{proj}</span>
                         <span className={`task-status-text status-text-${statusClass(task.status)}`}>
-                          {statusText[task.status] || task.status}
+                          {statusText(task.status, t)}
                         </span>
                         {task.updated_at && (
                           <span className="text-xs text-fg-muted flex-shrink-0 group-hover/task:hidden">
-                            {formatRelativeTime(task.updated_at)}
+                            {formatRelativeTime(task.updated_at, t)}
                           </span>
                         )}
                         <div className="hidden group-hover/task:flex items-center gap-0.5 flex-shrink-0">
@@ -377,35 +378,27 @@ function ChatSidebar({
                             type="button"
                             onClick={(e) => { e.stopPropagation(); togglePin(task.task_id) }}
                             className="w-5 h-5 flex items-center justify-center rounded text-accent hover:text-accent-hover hover:bg-bg-muted"
-                            title="取消置顶"
+                            title={t('sidebar.tooltipUnpin')}
                           >
-                            <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: 'rotate(-30deg)' }}>
-                              <path d="M12 17v5" />
-                              <path d="M5 17h14l-1.5-2.5V9a4 4 0 0 0-3-3.87V4a1.5 1.5 0 0 0-3 0v1.13A4 4 0 0 0 8.5 9v5.5L7 17z" />
-                            </svg>
+                            <Pin size={13} fill="currentColor" strokeWidth={2} style={{ transform: 'rotate(-30deg)' }} />
                           </button>
                           <button
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation()
-                              const ok = window.confirm(`确定删除任务 ${task.task_id}？\n\n这会删除该任务的本地记录、对话和 artifacts。`)
+                              const ok = window.confirm(t('sidebar.confirmDeleteTask', { id: task.task_id }))
                               if (ok) onDeleteTask(task.task_id, task.workspace_key)
                             }}
                             className="w-5 h-5 flex items-center justify-center rounded text-fg-muted hover:text-danger hover:bg-bg-muted"
-                            title="删除会话"
+                            title={t('sidebar.tooltipDelete')}
                           >
-                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="3 6 5 6 21 6" />
-                              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                              <path d="M10 11v6M14 11v6" />
-                              <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
-                            </svg>
+                            <Trash2 size={13} strokeWidth={2} />
                           </button>
                         </div>
                       </div>
                       {(round > 0 || elapsed) && (
                         <div className="flex items-center gap-1.5 mt-0.5 pl-[22px] text-xs text-fg-muted">
-                          {round > 0 && <span>第 {round} 轮</span>}
+                          {round > 0 && <span>{t('sidebar.roundN', { n: round })}</span>}
                           {round > 0 && elapsed && <span>·</span>}
                           {elapsed && <LiveElapsed startedAt={task.active_run!.started_at} />}
                         </div>
@@ -415,7 +408,7 @@ function ChatSidebar({
                 })}
               </>
             )}
-            <div className="px-2 pt-2 pb-1 text-xs text-fg-muted font-medium">项目</div>
+            <div className="px-2 pt-2 pb-1 text-xs text-fg-muted font-medium">{t('sidebar.projects')}</div>
             {Object.entries(groupedTasks).map(([projectKey, workspaceTasks]) => {
               const hasSelected = workspaceTasks.some(t => t.task_id === selectedTaskId)
               const repoRoot = workspaceTasks[0]?.repo_root || ''
@@ -434,13 +427,9 @@ function ChatSidebar({
                         type="button"
                         onClick={(e) => { e.stopPropagation(); setOpenMenuRepoRoot(isMenuOpen ? null : repoRoot) }}
                         className={`w-5 h-5 flex items-center justify-center rounded text-fg-muted hover:text-fg hover:bg-bg-muted transition-opacity ${isMenuOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
-                        title="更多操作"
+                        title={t('sidebar.tooltipMore')}
                       >
-                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
-                          <circle cx="5" cy="12" r="1.2" fill="currentColor" />
-                          <circle cx="12" cy="12" r="1.2" fill="currentColor" />
-                          <circle cx="19" cy="12" r="1.2" fill="currentColor" />
-                        </svg>
+                        <Ellipsis size={14} strokeWidth={2} />
                       </button>
                       {isMenuOpen && (
                         <div className="absolute right-0 top-full mt-1 z-50 min-w-[160px] bg-bg-elevated border border-border rounded-lg shadow-lg py-1">
@@ -449,21 +438,16 @@ function ChatSidebar({
                             onClick={(e) => { e.stopPropagation(); setOpenMenuRepoRoot(null); setRenamingRepoRoot(repoRoot) }}
                             className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-fg hover:bg-bg-subtle transition-colors"
                           >
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                            </svg>
-                            重命名项目
+                            <SquarePen size={14} strokeWidth={2} />
+                            {t('sidebar.menuRename')}
                           </button>
                           <button
                             type="button"
                             onClick={(e) => { e.stopPropagation(); setOpenMenuRepoRoot(null); onOpenInFinder(repoRoot) }}
                             className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-fg hover:bg-bg-subtle transition-colors"
                           >
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-                            </svg>
-                            在访达中打开
+                            <FolderOpen size={14} strokeWidth={2} />
+                            {t('sidebar.menuOpenInFinder')}
                           </button>
                           <div className="my-1 border-t border-border-subtle" />
                           <button
@@ -471,18 +455,13 @@ function ChatSidebar({
                             onClick={(e) => {
                               e.stopPropagation()
                               setOpenMenuRepoRoot(null)
-                              const ok = window.confirm(`确定移除项目「${projectKey}」？\n\n这会删除该项目下的所有任务。`)
+                              const ok = window.confirm(t('sidebar.confirmRemoveProject', { name: projectKey }))
                               if (ok) onRemoveProject(repoRoot)
                             }}
                             className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-danger hover:bg-bg-subtle transition-colors"
                           >
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="3 6 5 6 21 6" />
-                              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                              <path d="M10 11v6M14 11v6" />
-                              <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
-                            </svg>
-                            移除
+                            <Trash2 size={14} strokeWidth={2} />
+                            {t('sidebar.menuRemove')}
                           </button>
                         </div>
                       )}
@@ -491,17 +470,13 @@ function ChatSidebar({
                       type="button"
                       onClick={(e) => { e.stopPropagation(); onCreateTask(workspaceTasks[0]?.repo_root) }}
                       className="opacity-0 group-hover:opacity-100 w-5 h-5 flex items-center justify-center rounded text-fg-muted hover:text-fg hover:bg-bg-muted transition-opacity"
-                      title="在此项目新建任务"
+                      title={t('sidebar.tooltipNewInProject')}
                     >
-                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="3" y="3" width="18" height="18" rx="4" />
-                        <line x1="12" y1="8" x2="12" y2="16" />
-                        <line x1="8" y1="12" x2="16" y2="12" />
-                      </svg>
+                      <SquarePlus size={14} strokeWidth={2} />
                     </button>
                   </div>
                   {workspaceTasks.length === 0 ? (
-                    <div className="px-3 py-1.5 ml-2 text-xs text-fg-muted">暂无对话</div>
+                    <div className="px-3 py-1.5 ml-2 text-xs text-fg-muted">{t('sidebar.noConversation')}</div>
                   ) : (
                     workspaceTasks.map((task) => {
                       const isSelected = selectedTaskId === task.task_id
@@ -529,11 +504,11 @@ function ChatSidebar({
                               {task.task_id}
                             </span>
                             <span className={`task-status-text status-text-${statusClass(task.status)}`}>
-                              {statusText[task.status] || task.status}
+                              {statusText(task.status, t)}
                             </span>
                             {task.updated_at && (
                               <span className="text-xs text-fg-muted flex-shrink-0 group-hover/task:hidden">
-                                {formatRelativeTime(task.updated_at)}
+                                {formatRelativeTime(task.updated_at, t)}
                               </span>
                             )}
                             <div className="hidden group-hover/task:flex items-center gap-0.5 flex-shrink-0">
@@ -541,35 +516,27 @@ function ChatSidebar({
                                 type="button"
                                 onClick={(e) => { e.stopPropagation(); togglePin(task.task_id) }}
                                 className="w-5 h-5 flex items-center justify-center rounded text-fg-muted hover:text-accent hover:bg-bg-muted"
-                                title="置顶"
+                                title={t('sidebar.tooltipPin')}
                               >
-                                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: 'rotate(-30deg)' }}>
-                                  <path d="M12 17v5" />
-                                  <path d="M5 17h14l-1.5-2.5V9a4 4 0 0 0-3-3.87V4a1.5 1.5 0 0 0-3 0v1.13A4 4 0 0 0 8.5 9v5.5L7 17z" />
-                                </svg>
+                                <Pin size={13} strokeWidth={2} style={{ transform: 'rotate(-30deg)' }} />
                               </button>
                               <button
                                 type="button"
                                 onClick={(e) => {
                                   e.stopPropagation()
-                                  const ok = window.confirm(`确定删除任务 ${task.task_id}？\n\n这会删除该任务的本地记录、对话和 artifacts。`)
+                                  const ok = window.confirm(t('sidebar.confirmDeleteTask', { id: task.task_id }))
                                   if (ok) onDeleteTask(task.task_id, task.workspace_key)
                                 }}
                                 className="w-5 h-5 flex items-center justify-center rounded text-fg-muted hover:text-danger hover:bg-bg-muted"
-                                title="删除会话"
+                                title={t('sidebar.tooltipDelete')}
                               >
-                                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                  <polyline points="3 6 5 6 21 6" />
-                                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                                  <path d="M10 11v6M14 11v6" />
-                                  <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
-                                </svg>
+                                <Trash2 size={13} strokeWidth={2} />
                               </button>
                             </div>
                           </div>
                           {(round > 0 || elapsed) && (
                             <div className="flex items-center gap-1.5 mt-0.5 pl-[22px] text-xs text-fg-muted">
-                              {round > 0 && <span>第 {round} 轮</span>}
+                              {round > 0 && <span>{t('sidebar.roundN', { n: round })}</span>}
                               {round > 0 && elapsed && <span>·</span>}
                               {elapsed && <LiveElapsed startedAt={task.active_run!.started_at} />}
                             </div>
@@ -593,6 +560,7 @@ function ChatSidebar({
             setRenamingRepoRoot(null)
           }}
           onCancel={() => setRenamingRepoRoot(null)}
+          t={t}
         />
       )}
 
@@ -601,11 +569,8 @@ function ChatSidebar({
           onClick={onOpenSettings}
           className="w-full flex items-center gap-2 px-3 py-2 text-sm text-fg-secondary hover:text-fg hover:bg-bg-subtle rounded-lg transition-colors"
         >
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="3" />
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-          </svg>
-          设置
+          <SettingsIcon size={16} strokeWidth={2} />
+          {t('sidebar.settings')}
         </button>
       </div>
     </>
@@ -613,11 +578,7 @@ function ChatSidebar({
 }
 
 function FolderIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" className="flex-shrink-0">
-      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-    </svg>
-  )
+  return <Folder size={14} strokeWidth={2} className="flex-shrink-0" />
 }
 
 function projectName(task: Task, projectNames?: Record<string, string>): string {
@@ -632,30 +593,32 @@ function projectName(task: Task, projectNames?: Record<string, string>): string 
   return key.replace(/-[a-f0-9]{8,}$/i, '')
 }
 
-function formatRelativeTime(iso: string): string {
+function formatRelativeTime(iso: string, t: TFunction): string {
   const diff = Date.now() - new Date(iso).getTime()
   if (Number.isNaN(diff) || diff < 0) return ''
   const sec = Math.floor(diff / 1000)
-  if (sec < 60) return '刚刚'
+  if (sec < 60) return t('time.justNow')
   const min = Math.floor(sec / 60)
-  if (min < 60) return `${min}分`
+  if (min < 60) return t('time.minute', { n: min })
   const hour = Math.floor(min / 60)
-  if (hour < 24) return `${hour}时`
+  if (hour < 24) return t('time.hour', { n: hour })
   const day = Math.floor(hour / 24)
-  if (day < 30) return `${day}天`
+  if (day < 30) return t('time.day', { n: day })
   const month = Math.floor(day / 30)
-  if (month < 12) return `${month}月`
-  return `${Math.floor(month / 12)}年`
+  if (month < 12) return t('time.month', { n: month })
+  return t('time.year', { n: Math.floor(month / 12) })
 }
 
 function RenameDialog({
   currentName,
   onConfirm,
-  onCancel
+  onCancel,
+  t
 }: {
   currentName: string
   onConfirm: (newName: string) => void
   onCancel: () => void
+  t: TFunction
 }) {
   const [name, setName] = useState(currentName)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -678,7 +641,7 @@ function RenameDialog({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onCancel}>
       <div className="bg-bg-elevated rounded-xl shadow-xl w-[360px] p-5" onClick={(e) => e.stopPropagation()}>
-        <h3 className="text-sm font-semibold mb-3">修改项目名称</h3>
+        <h3 className="text-sm font-semibold mb-3">{t('sidebar.renameTitle')}</h3>
         <form onSubmit={handleSubmit}>
           <input
             ref={inputRef}
@@ -693,14 +656,14 @@ function RenameDialog({
               onClick={onCancel}
               className="px-3 py-1.5 text-sm text-fg hover:bg-bg-subtle rounded-lg transition-colors"
             >
-              取消
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
               disabled={!name.trim()}
               className="px-3 py-1.5 text-sm bg-accent text-fg-inverse rounded-lg hover:bg-accent-hover transition-colors disabled:opacity-50"
             >
-              确定
+              {t('common.confirm')}
             </button>
           </div>
         </form>

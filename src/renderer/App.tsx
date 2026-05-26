@@ -1,15 +1,19 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
+import { FolderOpen } from 'lucide-react'
 import { useHealthCheck, useBootstrap, useTasks, useTaskDetail, useCreateTask, useSendMessage, useStartTask, useSkipCountdown, usePauseCountdown, useInterrupt, useDeleteTask } from './hooks/useBuddy'
 import { useTheme } from './hooks/useTheme'
+import { useT } from './hooks/useI18n'
+import type { TFunction } from './hooks/useI18n'
 import { TitleBar } from './components/TitleBar'
 import { Sidebar } from './components/Sidebar'
 import { ChatArea } from './components/ChatArea'
 import { StatusBar } from './components/StatusBar'
 import { SettingsContent, SettingsTab } from './components/SettingsContent'
-import { ACTOR_TEXT, Actor } from './lib/format'
+import { ACTOR_LABEL_KEY, Actor } from './lib/format'
 import type { GlobalSettings } from '../shared/types'
 
 export default function App() {
+  const t = useT()
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [isStatusBarOpen, setIsStatusBarOpen] = useState(true)
   const [sidebarWidth, setSidebarWidth] = useState(240)
@@ -73,9 +77,9 @@ export default function App() {
       }
     } catch (error) {
       console.error('Failed to delete task:', error)
-      window.alert('删除失败：' + (error instanceof Error ? error.message : String(error)))
+      window.alert(t('sidebar.deleteFail', { message: error instanceof Error ? error.message : String(error) }))
     }
-  }, [deleteTask, selectedTaskId])
+  }, [deleteTask, selectedTaskId, t])
 
   const handleRenameProject = useCallback((repoRoot: string, newName: string) => {
     setProjectNames(prev => {
@@ -136,9 +140,9 @@ export default function App() {
       const msg = error instanceof Error ? error.message : String(error)
       // Extract API error message from axios error
       const apiMsg = (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail || msg
-      window.alert('创建失败：' + apiMsg)
+      window.alert(t('modal.create.failed', { message: apiMsg }))
     }
-  }, [bootstrap, createTask])
+  }, [bootstrap, createTask, t])
 
   const handleOpenCreateModal = useCallback((repoRoot?: string) => {
     setPendingRepoRoot(repoRoot ?? null)
@@ -342,9 +346,12 @@ export default function App() {
                 taskState={taskDetail?.state ?? null}
                 taskSettings={taskDetail?.settings ?? null}
                 events={taskDetail?.events ?? []}
+                latestFailure={taskDetail?.latest_failure ?? null}
                 onSkipCountdown={handleSkipCountdown}
                 onPauseCountdown={handlePauseCountdown}
                 onInterrupt={handleInterrupt}
+                onRetry={() => handleStartTask()}
+                onResume={() => handleStartTask()}
                 onResize={handleStatusBarResize}
               />
             </>
@@ -359,6 +366,7 @@ export default function App() {
           onCreate={handleCreateTask}
           defaultRepoRoot={modalDefaultRepoRoot}
           globalSettings={bootstrap?.global_settings ?? null}
+          t={t}
         />
       )}
     </div>
@@ -369,16 +377,18 @@ function CreateTaskModal({
   onClose,
   onCreate,
   defaultRepoRoot,
-  globalSettings
+  globalSettings,
+  t
 }: {
   onClose: () => void
   onCreate: (taskId: string, taskText: string, repoRoot: string, settings: Record<string, unknown>) => void
   defaultRepoRoot: string
   globalSettings: GlobalSettings | null
+  t: TFunction
 }) {
   const [taskId, setTaskId] = useState('')
   const [repoRoot, setRepoRoot] = useState(defaultRepoRoot)
-  const [taskText, setTaskText] = useState('# 目标\n\n描述要完成的任务。\n\n# 背景与约束\n\n项目背景、约束等。\n\n# 验收标准\n- ')
+  const [taskText, setTaskText] = useState(() => t('modal.create.taskBriefDefault'))
   const [implementer, setImplementer] = useState<Actor>('claude')
   const [reviewer, setReviewer] = useState<Actor>('codex')
   const [implementerSession, setImplementerSession] = useState('')
@@ -388,7 +398,7 @@ function CreateTaskModal({
 
   const TASK_NAME_RE = /^[a-zA-Z0-9一-鿿㐀-䶿""「」【】{}][a-zA-Z0-9一-鿿㐀-䶿 ._\-""「」【】{}]{0,63}$/
   const taskIdError = taskId.trim() && !TASK_NAME_RE.test(taskId.trim())
-    ? '只能使用中文、字母、数字、点、下划线、短横线、空格及「」【】{}等，最长 64 字符'
+    ? t('modal.create.taskNameError')
     : null
   const sameActorError = implementer === reviewer
   const canSubmit = taskId.trim() && !taskIdError && !sameActorError
@@ -446,7 +456,7 @@ function CreateTaskModal({
         {/* 头部 */}
         <div className="px-6 py-4 border-b border-border">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">新建任务</h2>
+            <h2 className="text-lg font-semibold">{t('modal.create.title')}</h2>
             <button
               onClick={onClose}
               className="w-8 h-8 flex items-center justify-center rounded hover:bg-bg-subtle"
@@ -461,17 +471,17 @@ function CreateTaskModal({
           {/* 任务名 */}
           <div>
             <label className="block text-sm font-medium text-fg mb-1">
-              任务名称 <span className="text-danger">*</span>
+              {t('modal.create.taskName')} <span className="text-danger">*</span>
             </label>
             <input
               type="text"
               value={taskId}
               onChange={(e) => setTaskId(e.target.value)}
-              placeholder="输入任务名称"
+              placeholder={t('modal.create.taskNamePlaceholder')}
               className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-1 bg-bg ${taskIdError ? 'border-danger focus:border-danger focus:ring-danger' : 'border-border focus:border-accent focus:ring-accent'}`}
             />
             <div className="flex justify-between mt-1">
-              <span className="text-xs text-fg-muted">中文、字母、数字、点、下划线、短横线、空格及「」【】{}，最长 64 字符</span>
+              <span className="text-xs text-fg-muted">{t('modal.create.taskNameHint')}</span>
               <span className="text-xs text-fg-muted">{taskId.trim().length}/64</span>
             </div>
             {taskIdError && (
@@ -482,7 +492,7 @@ function CreateTaskModal({
           {/* 工作目录 */}
           <div>
             <label className="block text-sm font-medium text-fg mb-1">
-              工作目录
+              {t('modal.create.repoRoot')}
             </label>
             <div className="flex gap-2">
               <input
@@ -495,13 +505,11 @@ function CreateTaskModal({
               <button
                 type="button"
                 onClick={handleSelectDirectory}
-                title="选择目录"
+                title={t('modal.create.repoRootSelect')}
                 className="px-3 py-2 border border-border rounded-lg hover:bg-bg-subtle text-sm flex items-center gap-1.5 shrink-0"
               >
-                <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M1.5 4.5a1 1 0 0 1 1-1h3l1.5 1.5h5.5a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-10a1 1 0 0 1-1-1v-7.5z" />
-                </svg>
-                选择
+                <FolderOpen size={14} strokeWidth={1.75} />
+                {t('common.select')}
               </button>
             </div>
           </div>
@@ -509,7 +517,7 @@ function CreateTaskModal({
           {/* 自动轮次 / 倒计时 */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-fg mb-1">自动轮次</label>
+              <label className="block text-sm font-medium text-fg mb-1">{t('modal.create.maxRounds')}</label>
               <input
                 type="number"
                 min={1}
@@ -520,7 +528,7 @@ function CreateTaskModal({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-fg mb-1">倒计时（秒）</label>
+              <label className="block text-sm font-medium text-fg mb-1">{t('modal.create.countdown')}</label>
               <input
                 type="number"
                 min={0}
@@ -535,26 +543,26 @@ function CreateTaskModal({
           {/* 执行方 / Reviewer */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-fg mb-1">执行方</label>
+              <label className="block text-sm font-medium text-fg mb-1">{t('modal.create.implementer')}</label>
               <select
                 value={implementer}
                 onChange={(e) => setImplementer(e.target.value as Actor)}
                 className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent bg-bg text-sm"
               >
                 {actorOptions.map(a => (
-                  <option key={a} value={a}>{ACTOR_TEXT[a] || a}</option>
+                  <option key={a} value={a}>{t(ACTOR_LABEL_KEY[a])}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-fg mb-1">Reviewer</label>
+              <label className="block text-sm font-medium text-fg mb-1">{t('modal.create.reviewer')}</label>
               <select
                 value={reviewer}
                 onChange={(e) => setReviewer(e.target.value as Actor)}
                 className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent bg-bg text-sm"
               >
                 {actorOptions.map(a => (
-                  <option key={a} value={a}>{ACTOR_TEXT[a] || a}</option>
+                  <option key={a} value={a}>{t(ACTOR_LABEL_KEY[a])}</option>
                 ))}
               </select>
             </div>
@@ -563,35 +571,35 @@ function CreateTaskModal({
           {/* 会话 ID */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-fg mb-1">执行方会话 ID</label>
+              <label className="block text-sm font-medium text-fg mb-1">{t('modal.create.implementerSession')}</label>
               <input
                 type="text"
                 value={implementerSession}
                 onChange={(e) => setImplementerSession(e.target.value)}
-                placeholder="留空则新建"
+                placeholder={t('modal.create.sessionPlaceholder')}
                 className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent bg-bg font-mono text-sm"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-fg mb-1">Reviewer会话 ID</label>
+              <label className="block text-sm font-medium text-fg mb-1">{t('modal.create.reviewerSession')}</label>
               <input
                 type="text"
                 value={reviewerSession}
                 onChange={(e) => setReviewerSession(e.target.value)}
-                placeholder="留空则新建"
+                placeholder={t('modal.create.sessionPlaceholder')}
                 className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent bg-bg font-mono text-sm"
               />
             </div>
           </div>
 
           {sameActorError && (
-            <div className="text-xs text-danger">执行方和 Reviewer 不能是同一个角色。</div>
+            <div className="text-xs text-danger">{t('modal.create.sameActorError')}</div>
           )}
 
           {/* 任务说明 */}
           <div>
             <label className="block text-sm font-medium text-fg mb-1">
-              任务说明
+              {t('modal.create.taskBrief')}
             </label>
             <textarea
               value={taskText}
@@ -608,14 +616,14 @@ function CreateTaskModal({
             onClick={onClose}
             className="px-4 py-2 text-sm text-fg hover:bg-bg-subtle rounded-lg transition-colors"
           >
-            取消
+            {t('common.cancel')}
           </button>
           <button
             onClick={handleSubmit}
             disabled={!canSubmit}
             className="px-4 py-2 text-sm bg-accent text-fg-inverse rounded-lg hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            创建任务
+            {t('modal.create.submit')}
           </button>
         </div>
       </div>

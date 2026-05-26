@@ -1,14 +1,30 @@
-import { TaskSettings } from '../../shared/types'
+import { Event, TaskSettings } from '../../shared/types'
+import { Language, TranslationKey, localeTagFor, translate } from './i18n'
 
-export const ACTOR_TEXT: Record<string, string> = {
-  claude: 'Claude',
-  codex: 'Codex',
-  opencode: 'OpenCode',
-  kimi: 'Kimi',
-  human: '你',
-  system: '系统'
+/**
+ * Mapping of actor identifier → translation key for the short label.
+ * Look up via i18n: `t(ACTOR_LABEL_KEY[actor])`.
+ */
+export const ACTOR_LABEL_KEY: Record<string, TranslationKey> = {
+  claude: 'actor.claude',
+  codex: 'actor.codex',
+  opencode: 'actor.opencode',
+  kimi: 'actor.kimi',
+  human: 'actor.human',
+  system: 'actor.system'
 }
 
+/**
+ * Looks up the localized actor label.
+ */
+export function actorText(actor: string, lang: Language): string {
+  const key = ACTOR_LABEL_KEY[actor]
+  return key ? translate(lang, key) : actor
+}
+
+/**
+ * Stable display names that are not translated (product/CLI names).
+ */
 export const ACTOR_DISPLAY_NAME: Record<string, string> = {
   claude: 'Claude Code',
   codex: 'Codex',
@@ -204,9 +220,24 @@ export function decodeErrorText(text: string): string {
   return unescapeJsonString(text)
 }
 
-export function formatTime(value: string | undefined | null): string {
+export function eventPayloadSummary(event: Event, lang?: Language): string {
+  const payload = event.payload || {}
+  const value = (payload.error as string | undefined) || (payload.text as string | undefined) || ''
+  if (!value) return ''
+  const raw = typeof value === 'string' ? value : JSON.stringify(value)
+  const text = decodeErrorText(raw)
+  if (text.length <= 1200) return text
+  const tail =
+    lang === 'en' ? '\n…(truncated)'
+      : lang === 'zh-TW' ? '\n…（已截斷）'
+        : '\n...（已截断）'
+  return `${text.slice(0, 1200).trimEnd()}${tail}`
+}
+
+export function formatTime(value: string | undefined | null, lang?: Language): string {
   if (!value) return '-'
-  return new Date(value).toLocaleTimeString('zh-CN', {
+  const locale = lang ? localeTagFor(lang) : undefined
+  return new Date(value).toLocaleTimeString(locale, {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit'

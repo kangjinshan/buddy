@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
+import { Monitor, Moon, Sun } from 'lucide-react'
 import { useTheme, Theme } from '../hooks/useTheme'
 import { useUpdateGlobalSettings } from '../hooks/useBuddy'
+import { useLanguagePref, useSendShortcut, useT, TFunction } from '../hooks/useI18n'
+import { LANGUAGE_OPTIONS, LanguagePref, SendShortcut } from '../lib/i18n'
 import type { GlobalSettings, Launcher } from '../../shared/types'
 
 export type SettingsTab = 'general' | 'appearance'
@@ -10,61 +13,60 @@ interface SettingsContentProps {
   globalSettings: GlobalSettings | null
 }
 
-const PAGE_TITLE: Record<SettingsTab, string> = {
-  general: '常规',
-  appearance: '外观'
-}
-
 const LAUNCHER_ORDER: string[] = ['claude', 'codex', 'opencode', 'kimi']
 
-const LAUNCHER_INFO: Record<string, { title: string; label: string; placeholder: string; hint: React.ReactNode }> = {
-  claude: {
-    title: 'Claude 配置',
-    label: 'Claude 启动命令',
-    placeholder: 'claude --dangerously-skip-permissions',
-    hint: (
-      <>
-        Claude Code 的启动命令。作为执行方时推荐使用 <Code>--dangerously-skip-permissions</Code>。
-      </>
-    )
-  },
-  codex: {
-    title: 'Codex 配置',
-    label: 'Codex 启动命令',
-    placeholder: 'codex',
-    hint: (
-      <>
-        Codex 的启动命令。launcher 会自动使用 <Code>exec --dangerously-bypass-approvals-and-sandbox</Code> 非交互模式执行。
-      </>
-    )
-  },
-  opencode: {
-    title: 'OpenCode 配置',
-    label: 'OpenCode 启动命令',
-    placeholder: 'opencode',
-    hint: (
-      <>
-        OpenCode 的启动命令。launcher 会自动使用 <Code>run --format json --dangerously-skip-permissions</Code> 非交互模式执行。
-      </>
-    )
-  },
-  kimi: {
-    title: 'Kimi 配置',
-    label: 'Kimi 启动命令',
-    placeholder: 'kimi',
-    hint: (
-      <>
-        Kimi CLI 的启动命令。launcher 会自动使用 <Code>--print --output-format stream-json --input-format text</Code> 非交互模式执行（<Code>--print</Code> 隐式启用 <Code>--afk</Code> 自动批准）。
-      </>
-    )
+type LauncherInfo = { title: string; label: string; placeholder: string; hint: React.ReactNode }
+
+function launcherInfoFor(actor: string, t: TFunction): LauncherInfo {
+  switch (actor) {
+    case 'claude':
+      return {
+        title: t('settings.launcher.claude.title'),
+        label: t('settings.launcher.claude.label'),
+        placeholder: 'claude --dangerously-skip-permissions',
+        hint: <HintWithCode template={t('settings.launcher.claude.hint')} />
+      }
+    case 'codex':
+      return {
+        title: t('settings.launcher.codex.title'),
+        label: t('settings.launcher.codex.label'),
+        placeholder: 'codex',
+        hint: <HintWithCode template={t('settings.launcher.codex.hint')} />
+      }
+    case 'opencode':
+      return {
+        title: t('settings.launcher.opencode.title'),
+        label: t('settings.launcher.opencode.label'),
+        placeholder: 'opencode',
+        hint: <HintWithCode template={t('settings.launcher.opencode.hint')} />
+      }
+    case 'kimi':
+      return {
+        title: t('settings.launcher.kimi.title'),
+        label: t('settings.launcher.kimi.label'),
+        placeholder: 'kimi',
+        hint: <HintWithCode template={t('settings.launcher.kimi.hint')} />
+      }
+    default:
+      return { title: actor, label: actor, placeholder: actor, hint: '' }
   }
 }
 
+/**
+ * Renders a hint string, wrapping CLI flags (tokens starting with `--` or `-` and option names like `exec`/`run`/`stream-json`)
+ * in <code> tags only when they appear; here we just render plain text since we already pre-translated the hint.
+ */
+function HintWithCode({ template }: { template: string }) {
+  return <>{template}</>
+}
+
 export function SettingsContent({ tab, globalSettings }: SettingsContentProps) {
+  const t = useT()
+  const pageTitle = tab === 'general' ? t('settings.tab.general') : t('settings.tab.appearance')
   return (
     <div className="flex-1 overflow-y-auto bg-bg-elevated">
       <div className="max-w-4xl mx-auto px-10 py-10">
-        <h1 className="text-2xl font-semibold mb-8">{PAGE_TITLE[tab]}</h1>
+        <h1 className="text-2xl font-semibold mb-8">{pageTitle}</h1>
         {tab === 'general' ? (
           <GeneralSettings globalSettings={globalSettings} />
         ) : (
@@ -75,7 +77,71 @@ export function SettingsContent({ tab, globalSettings }: SettingsContentProps) {
   )
 }
 
+function GeneralSection() {
+  const t = useT()
+  const { pref, setPref, detected } = useLanguagePref()
+  const { shortcut, setShortcut } = useSendShortcut()
+
+  const detectedLabel = detected === 'zh-CN' ? '简体中文' : detected === 'zh-TW' ? '繁體中文' : 'English'
+  const sendOptions: Array<{ value: SendShortcut; label: string; desc: string }> = [
+    {
+      value: 'shift-enter',
+      label: t('settings.general.send.shiftEnter'),
+      desc: t('settings.general.send.shiftEnterHint')
+    },
+    {
+      value: 'enter',
+      label: t('settings.general.send.enter'),
+      desc: t('settings.general.send.enterHint')
+    }
+  ]
+
+  return (
+    <div>
+      <h2 className="text-base font-semibold text-fg mb-1">{t('settings.general.section.title')}</h2>
+      <p className="text-sm text-fg-secondary mb-5">{t('settings.general.section.desc')}</p>
+
+      <SettingsList>
+        <SettingsRow
+          title={t('settings.general.language.title')}
+          description={t('settings.general.language.desc')}
+          right={
+            <select
+              value={pref}
+              onChange={(e) => setPref(e.target.value as LanguagePref)}
+              className="px-2 py-1 text-sm bg-bg border border-border rounded-md focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"
+            >
+              {LANGUAGE_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.value === 'auto' ? `${opt.label} (${detectedLabel})` : opt.label}
+                </option>
+              ))}
+            </select>
+          }
+        />
+
+        <SettingsRow
+          title={t('settings.general.send.title')}
+          description={t('settings.general.send.desc')}
+          right={
+            <select
+              value={shortcut}
+              onChange={(e) => setShortcut(e.target.value as SendShortcut)}
+              className="px-2 py-1 text-sm bg-bg border border-border rounded-md focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"
+            >
+              {sendOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          }
+        />
+      </SettingsList>
+    </div>
+  )
+}
+
 function GeneralSettings({ globalSettings }: { globalSettings: GlobalSettings | null }) {
+  const t = useT()
   const updateMutation = useUpdateGlobalSettings()
   const launchers = globalSettings?.launchers ?? {}
 
@@ -110,9 +176,11 @@ function GeneralSettings({ globalSettings }: { globalSettings: GlobalSettings | 
 
   return (
     <div className="space-y-8">
-      <div>
-        <h2 className="text-base font-semibold text-fg mb-1">CLI 配置</h2>
-        <p className="text-sm text-fg-secondary mb-5">配置默认的启动命令和协作参数。新建任务时会使用这些设置作为默认值。</p>
+      <GeneralSection />
+
+      <div className="pt-2">
+        <h2 className="text-base font-semibold text-fg mb-1">{t('settings.cli.title')}</h2>
+        <p className="text-sm text-fg-secondary mb-5">{t('settings.cli.desc')}</p>
       </div>
 
       {LAUNCHER_ORDER.some((a) => launchers[a]) && (
@@ -125,7 +193,7 @@ function GeneralSettings({ globalSettings }: { globalSettings: GlobalSettings | 
                 key={actor}
                 actor={actor}
                 launcher={launcher}
-                info={LAUNCHER_INFO[actor]}
+                info={launcherInfoFor(actor, t)}
                 onSaveCommand={(command) => saveLauncher(actor, { command })}
               />
             )
@@ -134,12 +202,12 @@ function GeneralSettings({ globalSettings }: { globalSettings: GlobalSettings | 
       )}
 
       <div className="pt-4">
-        <h2 className="text-base font-semibold text-fg mb-1">默认协作参数</h2>
-        <p className="text-sm text-fg-secondary mb-3">新建任务时使用的默认参数</p>
+        <h2 className="text-base font-semibold text-fg mb-1">{t('settings.collab.title')}</h2>
+        <p className="text-sm text-fg-secondary mb-3">{t('settings.collab.desc')}</p>
         <SettingsList>
           <SettingsRow
-            title="倒计时（秒）"
-            description="角色切换前的等待时间"
+            title={t('settings.collab.countdown.title')}
+            description={t('settings.collab.countdown.desc')}
             right={
               <EditableNumber
                 value={globalSettings?.countdown_seconds ?? 30}
@@ -150,8 +218,8 @@ function GeneralSettings({ globalSettings }: { globalSettings: GlobalSettings | 
             }
           />
           <SettingsRow
-            title="自动轮次"
-            description="单个任务的最大协作轮数"
+            title={t('settings.collab.maxRounds.title')}
+            description={t('settings.collab.maxRounds.desc')}
             right={
               <EditableNumber
                 value={globalSettings?.max_rounds ?? 10}
@@ -162,8 +230,8 @@ function GeneralSettings({ globalSettings }: { globalSettings: GlobalSettings | 
             }
           />
           <SettingsRow
-            title="启动命令超时（秒）"
-            description="启动命令运行的最长时间，所有 CLI 共用"
+            title={t('settings.collab.timeout.title')}
+            description={t('settings.collab.timeout.desc')}
             right={
               <EditableNumber
                 value={currentTimeout}
@@ -182,9 +250,10 @@ function GeneralSettings({ globalSettings }: { globalSettings: GlobalSettings | 
 function LauncherSection({ actor, launcher, info, onSaveCommand }: {
   actor: string
   launcher: Launcher
-  info: { title: string; label: string; placeholder: string; hint: React.ReactNode }
+  info: LauncherInfo
   onSaveCommand: (command: string) => void
 }) {
+  const t = useT()
   const saved = launcher.command || ''
   const [draft, setDraft] = useState(saved)
 
@@ -205,7 +274,7 @@ function LauncherSection({ actor, launcher, info, onSaveCommand }: {
           disabled={!dirty}
           className="ml-auto px-3 py-1 text-xs font-medium rounded-md bg-accent text-fg-inverse hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
-          保存
+          {t('common.save')}
         </button>
       </div>
       <p className="text-sm text-fg-secondary mb-3 leading-relaxed">{info.hint}</p>
@@ -238,17 +307,18 @@ function LauncherSection({ actor, launcher, info, onSaveCommand }: {
 }
 
 function AppearanceSettings() {
+  const t = useT()
   const { theme, setTheme } = useTheme()
 
   const themeOptions: { value: Theme; label: string; description: string }[] = [
-    { value: 'light', label: '浅色', description: '始终使用浅色外观' },
-    { value: 'dark', label: '深色', description: '始终使用深色外观' },
-    { value: 'system', label: '系统', description: '跟随系统设置' },
+    { value: 'light', label: t('settings.appearance.theme.light.label'), description: t('settings.appearance.theme.light.desc') },
+    { value: 'dark', label: t('settings.appearance.theme.dark.label'), description: t('settings.appearance.theme.dark.desc') },
+    { value: 'system', label: t('settings.appearance.theme.system.label'), description: t('settings.appearance.theme.system.desc') },
   ]
 
   return (
     <div className="space-y-10">
-      <SettingsSection title="主题" description="选择应用的外观主题">
+      <SettingsSection title={t('settings.appearance.theme.title')} description={t('settings.appearance.theme.desc')}>
         <div className="grid grid-cols-3 gap-3">
           {themeOptions.map((opt) => {
             const active = theme === opt.value
@@ -288,34 +358,12 @@ function AppearanceSettings() {
 function ThemeIcon({ theme, active }: { theme: Theme; active: boolean }) {
   const color = active ? 'var(--accent)' : 'var(--fg-muted)'
   if (theme === 'light') {
-    return (
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke={color} strokeWidth="2">
-        <circle cx="12" cy="12" r="5" />
-        <line x1="12" y1="1" x2="12" y2="3" />
-        <line x1="12" y1="21" x2="12" y2="23" />
-        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-        <line x1="1" y1="12" x2="3" y2="12" />
-        <line x1="21" y1="12" x2="23" y2="12" />
-        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-      </svg>
-    )
+    return <Sun size={16} color={color} strokeWidth={2} />
   }
   if (theme === 'dark') {
-    return (
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke={color} strokeWidth="2">
-        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-      </svg>
-    )
+    return <Moon size={16} color={color} strokeWidth={2} />
   }
-  return (
-    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke={color} strokeWidth="2">
-      <rect x="2" y="3" width="20" height="14" rx="2" />
-      <line x1="8" y1="21" x2="16" y2="21" />
-      <line x1="12" y1="17" x2="12" y2="21" />
-    </svg>
-  )
+  return <Monitor size={16} color={color} strokeWidth={2} />
 }
 
 function SettingsSection({ title, description, children }: {
@@ -359,12 +407,6 @@ function SettingsRow({ title, description, right }: {
       </div>
       <div className="flex-shrink-0">{right}</div>
     </div>
-  )
-}
-
-function Code({ children }: { children: React.ReactNode }) {
-  return (
-    <code className="bg-bg-subtle px-1.5 py-0.5 rounded text-xs font-mono text-fg">{children}</code>
   )
 }
 

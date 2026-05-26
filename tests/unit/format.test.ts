@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { decodeUnicodeEscapes, decodeErrorText } from '../../src/renderer/lib/format'
+import { decodeUnicodeEscapes, decodeErrorText, eventPayloadSummary } from '../../src/renderer/lib/format'
 
 describe('decodeUnicodeEscapes', () => {
   it('decodes \\uXXXX sequences to Unicode characters', () => {
@@ -121,5 +121,55 @@ describe('decodeErrorText', () => {
     const result = decodeErrorText(input)
     expect(result).toContain('"bad"')
     expect(result).not.toContain('\\"bad\\"')
+  })
+})
+
+describe('eventPayloadSummary', () => {
+  it('decodes JSON payload errors into readable structure', () => {
+    const result = eventPayloadSummary({
+      seq: 7,
+      type: 'actor.failed',
+      actor: 'opencode',
+      ts: '2026-05-26T00:00:00Z',
+      payload: {
+        error: JSON.stringify({
+          data: {
+            message: 'Unexpected server error',
+            ref: 'server-error',
+            name: 'ServerError'
+          }
+        })
+      }
+    })
+
+    expect(result).toContain('data:')
+    expect(result).toContain('message: Unexpected server error')
+    expect(result).toContain('ref: server-error')
+    expect(result).not.toContain('\\"')
+  })
+
+  it('decodes \\uXXXX escapes inside payload errors', () => {
+    const result = eventPayloadSummary({
+      seq: 9,
+      type: 'actor.failed',
+      ts: '2026-05-26T00:00:00Z',
+      payload: {
+        error: '{"error":{"message":"\\u8fde\\u63a5\\u8d85\\u65f6"}}'
+      }
+    })
+    expect(result).toContain('连接超时')
+    expect(result).not.toContain('\\u8fde')
+  })
+
+  it('truncates output longer than 1200 chars', () => {
+    const long = 'a'.repeat(2000)
+    const result = eventPayloadSummary({
+      seq: 1,
+      type: 'actor.failed',
+      ts: '2026-05-26T00:00:00Z',
+      payload: { error: long }
+    })
+    expect(result.length).toBeLessThanOrEqual(1200 + 20)
+    expect(result).toContain('已截断')
   })
 })
