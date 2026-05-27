@@ -46,6 +46,11 @@ export function useKeyboardShortcuts(actions: ShortcutActions) {
       if (!binding.metaKey && !binding.altKey) return
     }
 
+    // When a buddy modal is open, let it handle Escape itself
+    if (matched === 'escape' && document.querySelector('[data-buddy-modal]')) {
+      return
+    }
+
     // Prevent default browser behavior for our shortcuts
     e.preventDefault()
     e.stopPropagation()

@@ -108,13 +108,30 @@ export function CommitModal({ gitStatus, repoRoot, onClose, onSuccess, onError }
   const [isGenerating, setIsGenerating] = useState(true)
   const [isStaging, setIsStaging] = useState(false)
   const [isCommitting, setIsCommitting] = useState(false)
-  const [selectedRemote, setSelectedRemote] = useState<string>(
-    gitStatus?.remotes[0]?.name ?? 'origin'
-  )
+  const [selectedRemote, setSelectedRemote] = useState<string>(() => {
+    const remoteNames = gitStatus?.remotes.map((r: GitRemote) => r.name) ?? []
+    const stored = (() => {
+      try { return localStorage.getItem(`buddy.lastRemote.${repoRoot}`) } catch { return null }
+    })()
+    if (stored && remoteNames.includes(stored)) return stored
+    return remoteNames[0] ?? 'origin'
+  })
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const stageAll = useGitStageAll()
   const commitAndPush = useGitCommitAndPush()
+
+  // Handle Escape at document level so it works regardless of focus position
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        onClose()
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
 
   const totalInsertions = (gitStatus?.diff?.insertions ?? 0) + (gitStatus?.staged?.insertions ?? 0)
   const totalDeletions = (gitStatus?.diff?.deletions ?? 0) + (gitStatus?.staged?.deletions ?? 0)
@@ -176,11 +193,19 @@ export function CommitModal({ gitStatus, repoRoot, onClose, onSuccess, onError }
     }
   }, [message, repoRoot, selectedRemote, hasUnstaged, stageAll, commitAndPush, onSuccess, onError, t])
 
+  // Persist last-used remote for this repo
+  useEffect(() => {
+    if (selectedRemote) {
+      try { localStorage.setItem(`buddy.lastRemote.${repoRoot}`, selectedRemote) } catch {}
+    }
+  }, [selectedRemote, repoRoot])
+
   const isBusy = isStaging || isGenerating || isCommitting
 
   return (
     <div
       className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+      data-buddy-modal
       onClick={onClose}
       onKeyDown={(e) => {
         if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && message.trim() && !isBusy) {

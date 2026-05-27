@@ -634,6 +634,18 @@ function RenameDialog({
     inputRef.current?.select()
   }, [])
 
+  // Handle Escape at document level so it works regardless of focus position
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        onCancel()
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [onCancel])
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     const trimmed = name.trim()
@@ -645,7 +657,12 @@ function RenameDialog({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onCancel}>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" data-buddy-modal onClick={onCancel} onKeyDown={(e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        onCancel()
+      }
+    }}>
       <div className="bg-bg-elevated rounded-xl shadow-xl w-[360px] p-5" onClick={(e) => e.stopPropagation()}>
         <h3 className="text-sm font-semibold mb-3">{t('sidebar.renameTitle')}</h3>
         <form onSubmit={handleSubmit}>

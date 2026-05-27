@@ -484,6 +484,18 @@ function CreateTaskModal({
   const [reviewerSession, setReviewerSession] = useState('')
   const normalizedGlobalSettings = normalizeGlobalSettings(globalSettings)
 
+  // Handle Escape at document level so it works regardless of focus position
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        onClose()
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
+
   const TASK_NAME_RE = /^[a-zA-Z0-9一-鿿㐀-䶿""「」【】{}][a-zA-Z0-9一-鿿㐀-䶿 ._\-""「」【】{}]{0,63}$/
   const taskIdError = taskId.trim() && !TASK_NAME_RE.test(taskId.trim())
     ? t('modal.create.taskNameError')
@@ -541,10 +553,14 @@ function CreateTaskModal({
   const actorOptions: Actor[] = ['claude', 'codex', 'opencode', 'kimi']
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onKeyDown={(e) => {
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" data-buddy-modal onKeyDown={(e) => {
       if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && canSubmit) {
         e.preventDefault()
         handleSubmit()
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        onClose()
       }
     }}>
       <div className="bg-bg-elevated rounded-xl shadow-xl w-[760px] max-h-[85vh] flex flex-col">
