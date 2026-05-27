@@ -73,7 +73,7 @@ export function decodeUnicodeEscapes(text: string): string {
 }
 
 /** Unescape JSON string escapes: \\", \\\\, \\n, \\t, \\r, \\uXXXX, etc. */
-function unescapeJsonString(text: string): string {
+export function unescapeText(text: string): string {
   return text.replace(/\\(u[0-9a-fA-F]{4}|["\\/ntrbf])/g, (match, seq: string) => {
     if (seq.startsWith('u')) return String.fromCharCode(parseInt(seq.slice(1), 16))
     const map: Record<string, string> = {
@@ -210,14 +210,14 @@ export function decodeErrorText(text: string): string {
         const decoded = deepDecodeUnicode(obj)
         const expanded = deepParseJsonStrings(decoded)
         const formatted = formatReadable(expanded)
-        const prefix = unescapeJsonString(text.slice(0, start)).trim()
+        const prefix = unescapeText(text.slice(0, start)).trim()
         return prefix ? `${prefix}\n${formatted}` : formatted
       } catch { /* JSON parse failed */ }
     }
   }
 
   // No JSON found, unescape all JSON string escapes
-  return unescapeJsonString(text)
+  return unescapeText(text)
 }
 
 export function eventPayloadSummary(event: Event, lang?: Language): string {

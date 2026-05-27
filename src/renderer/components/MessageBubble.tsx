@@ -1,6 +1,6 @@
 import { TranscriptEntry } from '../../shared/types'
 import { renderMarkdown } from '../lib/markdown'
-import { formatDuration, formatTime, decodeErrorText, ACTOR_LABEL_KEY } from '../lib/format'
+import { formatDuration, formatTime, decodeErrorText, unescapeText, ACTOR_LABEL_KEY } from '../lib/format'
 import { useLanguage, useT } from '../hooks/useI18n'
 
 interface MessageBubbleProps {
@@ -24,7 +24,7 @@ export function MessageBubble({ entry }: MessageBubbleProps) {
   const meta = entry.meta || ({} as Record<string, unknown>)
   const isRoundNotice = isSystem && meta.kind === 'round_notice'
 
-  const bodyText = isSystem && !isRoundNotice ? decodeErrorText(entry.content) : entry.content
+  const bodyText = isSystem && !isRoundNotice ? decodeErrorText(entry.content) : unescapeText(entry.content)
   const html = renderMarkdown(bodyText)
   const cls = roleClasses[entry.role] || 'msg-default'
   const metaText = formatMessageMeta(entry, lang)

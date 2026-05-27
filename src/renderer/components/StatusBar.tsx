@@ -322,10 +322,6 @@ function SettingsSummary({
   taskState: TaskState | null
   t: TFunction
 }) {
-  const launchers = settings?.launchers || {}
-  const hasCommands = Boolean(
-    launchers.claude?.command && (launchers.codex?.command || launchers.opencode?.command)
-  )
   const { impl, rev } = taskActors(settings)
   const display = (v?: string) => actorLabel(v, t)
   const repoRoot = taskState?.repo_root || '-'
@@ -336,12 +332,11 @@ function SettingsSummary({
   const rows: Array<[string, string]> = [
     [t('statusBar.summary.implementer'), display(impl)],
     [t('statusBar.summary.reviewer'), display(rev)],
-    [t('statusBar.summary.repoRoot'), repoRoot],
-    [t('statusBar.summary.launchCmd'), hasCommands ? t('statusBar.summary.launchCmdCustom') : '-'],
     [
       t('statusBar.summary.timing'),
       t('statusBar.summary.timingValue', { seconds: countdownSeconds, rounds: maxRounds })
-    ]
+    ],
+    [t('statusBar.summary.repoRoot'), repoRoot]
   ]
 
   return (
