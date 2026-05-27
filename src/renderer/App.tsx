@@ -29,8 +29,6 @@ export default function App() {
   const [pendingRepoRoot, setPendingRepoRoot] = useState<string | null>(null)
   const [view, setView] = useState<'chat' | 'settings'>('chat')
   const [settingsTab, setSettingsTab] = useState<SettingsTab>('general')
-  const [autoStartSeconds, setAutoStartSeconds] = useState(0)
-  const autoStartTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const autoSkipCountdownRef = useRef<string | null>(null)
   const [isFullScreen, setIsFullScreen] = useState(false)
   const [drafts, setDrafts] = useState<Record<string, string>>({})
@@ -137,10 +135,13 @@ export default function App() {
       setSelectedWorkspaceKey(result.workspace_key)
       setShowCreateModal(false)
       setPendingRepoRoot(null)
-      // Auto-start: 5s countdown if task has real text
+      // Auto-start immediately if task has real text
       const hasRealText = taskText.trim().length > 0
       if (hasRealText) {
-        setAutoStartSeconds(5)
+        startTask.mutate({
+          taskId: result.task,
+          data: { workspace_key: result.workspace_key }
+        })
       }
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : String(error)
@@ -210,12 +211,6 @@ export default function App() {
 
   const handleInterrupt = useCallback(() => {
     if (!selectedTaskId) return
-    // Cancel auto-start if interrupting
-    if (autoStartTimerRef.current) {
-      clearInterval(autoStartTimerRef.current)
-      autoStartTimerRef.current = null
-      setAutoStartSeconds(0)
-    }
     interrupt.mutate({
       taskId: selectedTaskId,
       workspaceKey: selectedWorkspaceKey ?? undefined
@@ -269,51 +264,6 @@ export default function App() {
   }), [handleOpenCreateModal, handleInterrupt, selectVisibleTaskByOffset, selectVisibleTaskBySlot, showCreateModal, view])
 
   useKeyboardShortcuts(shortcutActions)
-
-  // Auto-start countdown: when autoStartSeconds > 0 and task is READY, start timer
-  useEffect(() => {
-    if (autoStartSeconds <= 0 || !selectedTaskId) return
-    const isReady = isTaskReadyToStart(taskDetail?.state)
-    if (!isReady) {
-      // Task not ready yet, wait for next poll
-      return
-    }
-    if (autoStartTimerRef.current) return
-    autoStartTimerRef.current = setInterval(() => {
-      setAutoStartSeconds(prev => {
-        if (prev <= 1) {
-          if (autoStartTimerRef.current) {
-            clearInterval(autoStartTimerRef.current)
-            autoStartTimerRef.current = null
-          }
-          // Auto-start now
-          startTask.mutate({
-            taskId: selectedTaskId,
-            data: { workspace_key: selectedWorkspaceKey ?? undefined }
-          })
-          return 0
-        }
-        return prev - 1
-      })
-    }, 1000)
-    return () => {
-      if (autoStartTimerRef.current) {
-        clearInterval(autoStartTimerRef.current)
-        autoStartTimerRef.current = null
-      }
-    }
-  }, [autoStartSeconds, selectedTaskId, selectedWorkspaceKey, taskDetail?.state?.status, startTask])
-
-  // Cancel auto-start if task is no longer READY (e.g. already started by other means)
-  useEffect(() => {
-    if (autoStartSeconds > 0 && taskDetail?.state?.status && taskDetail.state.status !== 'READY') {
-      if (autoStartTimerRef.current) {
-        clearInterval(autoStartTimerRef.current)
-        autoStartTimerRef.current = null
-      }
-      setAutoStartSeconds(0)
-    }
-  }, [autoStartSeconds, taskDetail?.state?.status])
 
   // Auto-skip countdown when its deadline elapses so the next actor runs without manual click
   useEffect(() => {
@@ -419,7 +369,6 @@ export default function App() {
                 onSendMessage={handleSendMessage}
                 onStartTask={handleStartTask}
                 onInterrupt={handleInterrupt}
-                autoStartSeconds={autoStartSeconds}
                 draft={currentDraft}
                 onDraftChange={handleDraftChange}
               />
@@ -589,6 +538,7 @@ function CreateTaskModal({
               value={taskId}
               onChange={(e) => setTaskId(e.target.value)}
               placeholder={t('modal.create.taskNamePlaceholder')}
+              autoFocus
               className={`w-full px-3 py-1.5 text-xs border rounded-lg focus:outline-none focus:ring-1 bg-bg ${taskIdError ? 'border-danger focus:border-danger focus:ring-danger' : 'border-border focus:border-accent focus:ring-accent'}`}
             />
             <div className="flex justify-between mt-1">

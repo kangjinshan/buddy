@@ -12,12 +12,11 @@ interface ChatAreaProps {
   onSendMessage: (message: string, actor?: string) => void
   onStartTask: (actor?: string) => void
   onInterrupt: () => void
-  autoStartSeconds: number
   draft: string
   onDraftChange: (value: string) => void
 }
 
-export function ChatArea({ task, onSendMessage, onStartTask, onInterrupt, autoStartSeconds, draft, onDraftChange }: ChatAreaProps) {
+export function ChatArea({ task, onSendMessage, onStartTask, onInterrupt, draft, onDraftChange }: ChatAreaProps) {
   const t = useT()
   const transcriptRef = useRef<HTMLDivElement>(null)
   const [showScrollBtn, setShowScrollBtn] = useState(false)
@@ -134,7 +133,6 @@ export function ChatArea({ task, onSendMessage, onStartTask, onInterrupt, autoSt
         isReady={isReady}
         settings={task?.settings ?? null}
         taskState={task?.state ?? null}
-        autoStartSeconds={autoStartSeconds}
         draft={draft}
         onDraftChange={onDraftChange}
       />

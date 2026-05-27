@@ -58,7 +58,6 @@ describe('ChatArea ready task controls', () => {
         onSendMessage={() => {}}
         onStartTask={() => {}}
         onInterrupt={() => {}}
-        autoStartSeconds={0}
         draft=""
         onDraftChange={() => {}}
       />
@@ -87,7 +86,6 @@ describe('ChatArea ready task controls', () => {
         onSendMessage={() => {}}
         onStartTask={() => {}}
         onInterrupt={() => {}}
-        autoStartSeconds={0}
         draft=""
         onDraftChange={() => {}}
       />
@@ -108,28 +106,11 @@ describe('ChatArea ready task controls', () => {
         onSendMessage={() => {}}
         onStartTask={() => {}}
         onInterrupt={() => {}}
-        autoStartSeconds={0}
         draft=""
         onDraftChange={() => {}}
       />
     )
 
     expect(html).toContain('title="开始"')
-  })
-
-  it('shows the auto-start countdown for a newly-created READY task at round 1', () => {
-    const html = renderToStaticMarkup(
-      <ChatArea
-        task={readyTask(1)}
-        onSendMessage={() => {}}
-        onStartTask={() => {}}
-        onInterrupt={() => {}}
-        autoStartSeconds={5}
-        draft=""
-        onDraftChange={() => {}}
-      />
-    )
-
-    expect(html).toMatch(/5\s*秒后自动开始|Auto-starting in 5s/)
   })
 })

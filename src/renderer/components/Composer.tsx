@@ -12,12 +12,11 @@ interface ComposerProps {
   isReady: boolean
   settings: TaskSettings | null
   taskState: TaskState | null
-  autoStartSeconds: number
   draft: string
   onDraftChange: (value: string) => void
 }
 
-export function Composer({ onSend, onStart, onInterrupt, isRunning, isReady, settings, taskState, autoStartSeconds, draft, onDraftChange }: ComposerProps) {
+export function Composer({ onSend, onStart, onInterrupt, isRunning, isReady, settings, taskState, draft, onDraftChange }: ComposerProps) {
   const t = useT()
   const { shortcut } = useSendShortcut()
   const { impl, participants } = taskActors(settings)
@@ -91,7 +90,6 @@ export function Composer({ onSend, onStart, onInterrupt, isRunning, isReady, set
   // 按钮逻辑：运行中显示 stop，就绪无内容显示开始，其他显示发送
   const showStop = isRunning
   const showStart = isReady && !draft.trim() && !isRunning
-  const showAutoStart = autoStartSeconds > 0 && isReady
   const handlePrimary = showStop ? onInterrupt : showStart ? () => onStart(nextActor) : handleSend
   const primaryDisabled = showStop ? false : showStart ? false : !draft.trim()
 
@@ -117,9 +115,7 @@ export function Composer({ onSend, onStart, onInterrupt, isRunning, isReady, set
         {/* 工具栏 */}
         <div className="flex items-center justify-between mt-2">
           <div className="flex items-center gap-1 text-xs text-fg-muted select-none">
-            {showAutoStart ? (
-              <span className="text-success-fg font-medium">{t('composer.autoStart', { n: autoStartSeconds })}</span>
-            ) : isRunning ? (
+            {isRunning ? (
               t('composer.hint.running')
             ) : (
               sendHint

@@ -360,31 +360,17 @@ export class BuddyRunner {
       if (breakPending) {
         return {
           ...next,
-          status: roundWindowReached ? 'PAUSED' : 'COUNTDOWN',
+          status: roundWindowReached ? 'PAUSED' : 'READY',
           pending_break: { actor, round },
-          countdown: roundWindowReached ? null : {
-            status: 'running',
-            started_at: now,
-            after_actor: actor,
-            remaining: globalSettings.countdown_seconds ?? 30,
-            default_next_actor: nextActor,
-            deadline: new Date(Date.now() + (globalSettings.countdown_seconds ?? 30) * 1000).toISOString()
-          }
+          countdown: null
         }
       }
 
       return {
         ...next,
-        status: roundWindowReached ? 'PAUSED' : 'COUNTDOWN',
+        status: roundWindowReached ? 'PAUSED' : 'READY',
         pending_break: breakRejected ? null : next.pending_break,
-        countdown: roundWindowReached ? null : {
-          status: 'running',
-          started_at: now,
-          after_actor: actor,
-          remaining: globalSettings.countdown_seconds ?? 30,
-          default_next_actor: nextActor,
-          deadline: new Date(Date.now() + (globalSettings.countdown_seconds ?? 30) * 1000).toISOString()
-        }
+        countdown: null
       }
     })
 
@@ -473,14 +459,14 @@ export class BuddyRunner {
       })
       return
     }
-    await this.store.appendTaskEvent(taskId, workspaceKey, {
-      type: 'countdown.started',
-      payload: {
-        seconds: globalSettings.countdown_seconds ?? 30,
-        after_actor: actor,
-        default_next_actor: nextActor
+    // Directly start the next actor without countdown
+    if (this.executeLaunchers) {
+      try {
+        await this.startTask(taskId, { workspace_key: workspaceKey, actor: nextActor })
+      } catch {
+        // Auto-start of next actor failed; task is already in READY state
       }
-    })
+    }
   }
 
   private async markFailed(taskId: string, workspaceKey: string, actor: string, message: string, runId?: string): Promise<void> {

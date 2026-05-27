@@ -6,12 +6,13 @@ import { BuddyRunner } from '../../../src/main/buddy/runner'
 import { BuddyStore } from '../../../src/main/buddy/store'
 
 describe('BuddyRunner with fake launcher', () => {
-  it('records actor output and enters countdown after successful run', async () => {
+  it('records actor output and enters READY after successful run', async () => {
     const root = await mkdtemp(join(tmpdir(), 'buddy-runner-launcher-'))
     const fake = join(root, 'fake-actor.js')
     await writeFile(fake, "process.stdout.write(JSON.stringify({type:'message',role:'assistant',content:[{type:'output_text',text:'done'}],thread_id:'t1'}) + '\\n')\n")
 
     const store = new BuddyStore(root)
+    await store.updateGlobalSettings({ max_rounds: 1 })
     const created = await store.createTask({
       task_id: 'demo',
       repo_root: '/tmp/repo',
@@ -29,12 +30,12 @@ describe('BuddyRunner with fake launcher', () => {
     })
 
     const detail = await store.getTaskDetail('demo', created.workspace_key)
-    expect(detail.state.status).toBe('COUNTDOWN')
+    expect(detail.state.status).toBe('PAUSED')
     expect(detail.state.codex_thread_id).toBe('t1')
     expect(detail.events.some((event) => event.type === 'actor.completed')).toBe(true)
 
     const transcriptJsonl = await readFile(join(root, 'workspaces', created.workspace_key, 'tasks', 'demo', 'transcript.jsonl'), 'utf8')
-    const transcriptRow = JSON.parse(transcriptJsonl)
+    const transcriptRow = JSON.parse(transcriptJsonl.split('\n')[0])
     expect(transcriptRow).toMatchObject({
       role: 'codex',
       content: 'done',
@@ -58,6 +59,7 @@ describe('BuddyRunner with fake launcher', () => {
     ].join('\n'))
 
     const store = new BuddyStore(root)
+    await store.updateGlobalSettings({ max_rounds: 1 })
     const created = await store.createTask({
       task_id: 'demo',
       repo_root: root,
@@ -91,6 +93,7 @@ describe('BuddyRunner with fake launcher', () => {
     ].join('\n'))
 
     const store = new BuddyStore(root)
+    await store.updateGlobalSettings({ max_rounds: 2 })
     const created = await store.createTask({
       task_id: 'demo',
       repo_root: root,
@@ -105,27 +108,19 @@ describe('BuddyRunner with fake launcher', () => {
     })
     const runner = new BuddyRunner(store)
 
+    // Start the first actor; it auto-chains to the second, then pauses at max_rounds
     await runner.startTask('demo', {
       workspace_key: created.workspace_key,
       actor: 'opencode'
     })
 
-    const afterImplementer = await store.getTaskDetail('demo', created.workspace_key)
-    expect(afterImplementer.state.next_actor).toBe('kimi')
-    expect(afterImplementer.state.countdown?.default_next_actor).toBe('kimi')
-    expect(afterImplementer.state.round).toBe(1)
-    expect(afterImplementer.state.rounds_in_window).toBe(1)
-    expect(afterImplementer.state.context_sent?.opencode).toBe(true)
-
-    await runner.skipCountdown('demo', {
-      workspace_key: created.workspace_key,
-      next_actor: 'kimi'
-    })
-
-    const afterReviewer = await store.getTaskDetail('demo', created.workspace_key)
-    expect(afterReviewer.state.next_actor).toBe('opencode')
-    expect(afterReviewer.state.round).toBe(2)
-    expect(afterReviewer.state.rounds_in_window).toBe(2)
+    const detail = await store.getTaskDetail('demo', created.workspace_key)
+    expect(detail.state.status).toBe('PAUSED')
+    expect(detail.state.next_actor).toBe('opencode')
+    expect(detail.state.round).toBe(2)
+    expect(detail.state.rounds_in_window).toBe(2)
+    expect(detail.state.context_sent?.opencode).toBe(true)
+    expect(detail.state.context_sent?.kimi).toBe(true)
   })
 
   it('uses seed session and thread ids from settings on the first run', async () => {
@@ -142,6 +137,7 @@ describe('BuddyRunner with fake launcher', () => {
     ].join('\n'))
 
     const store = new BuddyStore(root)
+    await store.updateGlobalSettings({ max_rounds: 1 })
     const created = await store.createTask({
       task_id: 'demo',
       repo_root: root,
@@ -218,6 +214,7 @@ describe('BuddyRunner with fake launcher', () => {
     await chmod(fake, 0o755)
 
     const store = new BuddyStore(root)
+    await store.updateGlobalSettings({ max_rounds: 1 })
     const created = await store.createTask({
       task_id: 'demo',
       repo_root: root,
@@ -254,7 +251,6 @@ describe('BuddyRunner with fake launcher', () => {
     ].join('\n'))
 
     const store = new BuddyStore(root)
-    await store.updateGlobalSettings({ countdown_seconds: 1 })
     const created = await store.createTask({
       task_id: 'demo',
       repo_root: root,
@@ -267,13 +263,12 @@ describe('BuddyRunner with fake launcher', () => {
     })
     const runner = new BuddyRunner(store)
 
+    // Start first actor (codex) — it will signal break.
+    // After completion, the next actor (claude) is auto-started.
+    // Claude also signals break, confirming dual-break → DONE.
     await runner.startTask('demo', {
       workspace_key: created.workspace_key,
       actor: 'codex'
-    })
-    await runner.skipCountdown('demo', {
-      workspace_key: created.workspace_key,
-      next_actor: 'claude'
     })
 
     const detail = await store.getTaskDetail('demo', created.workspace_key)
