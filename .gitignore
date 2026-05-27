@@ -9,3 +9,4 @@ release
 .worktrees
 test-results
 playwright-report
+.sisyphus
