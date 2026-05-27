@@ -495,7 +495,7 @@ function CreateTaskModal({
         {/* 头部 */}
         <div className="px-6 py-4 border-b border-border">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">{t('modal.create.title')}</h2>
+            <h2 className="text-sm font-semibold">{t('modal.create.title')}</h2>
             <button
               onClick={onClose}
               className="w-8 h-8 flex items-center justify-center rounded hover:bg-bg-subtle"
@@ -509,7 +509,7 @@ function CreateTaskModal({
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
           {/* 任务名 */}
           <div>
-            <label className="block text-sm font-medium text-fg mb-1">
+            <label className="block text-xs font-medium text-fg-secondary mb-1">
               {t('modal.create.taskName')} <span className="text-danger">*</span>
             </label>
             <input
@@ -517,7 +517,7 @@ function CreateTaskModal({
               value={taskId}
               onChange={(e) => setTaskId(e.target.value)}
               placeholder={t('modal.create.taskNamePlaceholder')}
-              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-1 bg-bg ${taskIdError ? 'border-danger focus:border-danger focus:ring-danger' : 'border-border focus:border-accent focus:ring-accent'}`}
+              className={`w-full px-3 py-1.5 text-xs border rounded-lg focus:outline-none focus:ring-1 bg-bg ${taskIdError ? 'border-danger focus:border-danger focus:ring-danger' : 'border-border focus:border-accent focus:ring-accent'}`}
             />
             <div className="flex justify-between mt-1">
               <span className="text-xs text-fg-muted">{t('modal.create.taskNameHint')}</span>
@@ -528,9 +528,22 @@ function CreateTaskModal({
             )}
           </div>
 
+          {/* 任务说明 */}
+          <div>
+            <label className="block text-xs font-medium text-fg-secondary mb-1">
+              {t('modal.create.taskBrief')}
+            </label>
+            <textarea
+              value={taskText}
+              onChange={(e) => setTaskText(e.target.value)}
+              rows={10}
+              className="w-full px-3 py-1.5 border border-border rounded-lg focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent font-mono text-xs bg-bg"
+            />
+          </div>
+
           {/* 工作目录 */}
           <div>
-            <label className="block text-sm font-medium text-fg mb-1">
+            <label className="block text-xs font-medium text-fg-secondary mb-1">
               {t('modal.create.repoRoot')}
             </label>
             <div className="flex gap-2">
@@ -539,13 +552,13 @@ function CreateTaskModal({
                 value={repoRoot}
                 onChange={(e) => setRepoRoot(e.target.value)}
                 placeholder={defaultRepoRoot}
-                className="flex-1 px-3 py-2 border border-border rounded-lg focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent bg-bg font-mono text-sm"
+                className="flex-1 px-3 py-1.5 border border-border rounded-lg focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent bg-bg font-mono text-xs"
               />
               <button
                 type="button"
                 onClick={handleSelectDirectory}
                 title={t('modal.create.repoRootSelect')}
-                className="px-3 py-2 border border-border rounded-lg hover:bg-bg-subtle text-sm flex items-center gap-1.5 shrink-0"
+                className="px-3 py-1.5 border border-border rounded-lg hover:bg-bg-subtle text-xs flex items-center gap-1.5 shrink-0"
               >
                 <FolderOpen size={14} strokeWidth={1.75} />
                 {t('common.select')}
@@ -556,11 +569,11 @@ function CreateTaskModal({
           {/* 执行者 / 审查者 */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-fg mb-1">{t('modal.create.implementer')}</label>
+              <label className="block text-xs font-medium text-fg-secondary mb-1">{t('modal.create.implementer')}</label>
               <select
                 value={implementer}
                 onChange={(e) => setImplementer(e.target.value as Actor)}
-                className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent bg-bg text-sm"
+                className="w-full px-3 py-1.5 border border-border rounded-lg focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent bg-bg text-xs"
               >
                 {actorOptions.map(a => (
                   <option key={a} value={a}>{t(ACTOR_LABEL_KEY[a])}</option>
@@ -568,11 +581,11 @@ function CreateTaskModal({
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-fg mb-1">{t('modal.create.reviewer')}</label>
+              <label className="block text-xs font-medium text-fg-secondary mb-1">{t('modal.create.reviewer')}</label>
               <select
                 value={reviewer}
                 onChange={(e) => setReviewer(e.target.value as Actor)}
-                className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent bg-bg text-sm"
+                className="w-full px-3 py-1.5 border border-border rounded-lg focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent bg-bg text-xs"
               >
                 {actorOptions.map(a => (
                   <option key={a} value={a}>{t(ACTOR_LABEL_KEY[a])}</option>
@@ -584,23 +597,23 @@ function CreateTaskModal({
           {/* 会话 ID */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-fg mb-1">{t('modal.create.implementerSession')}</label>
+              <label className="block text-xs font-medium text-fg-secondary mb-1">{t('modal.create.implementerSession')}</label>
               <input
                 type="text"
                 value={implementerSession}
                 onChange={(e) => setImplementerSession(e.target.value)}
                 placeholder={t('modal.create.sessionPlaceholder')}
-                className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent bg-bg font-mono text-sm"
+                className="w-full px-3 py-1.5 border border-border rounded-lg focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent bg-bg font-mono text-xs"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-fg mb-1">{t('modal.create.reviewerSession')}</label>
+              <label className="block text-xs font-medium text-fg-secondary mb-1">{t('modal.create.reviewerSession')}</label>
               <input
                 type="text"
                 value={reviewerSession}
                 onChange={(e) => setReviewerSession(e.target.value)}
                 placeholder={t('modal.create.sessionPlaceholder')}
-                className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent bg-bg font-mono text-sm"
+                className="w-full px-3 py-1.5 border border-border rounded-lg focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent bg-bg font-mono text-xs"
               />
             </div>
           </div>
@@ -608,33 +621,20 @@ function CreateTaskModal({
           {sameActorError && (
             <div className="text-xs text-danger">{t('modal.create.sameActorError')}</div>
           )}
-
-          {/* 任务说明 */}
-          <div>
-            <label className="block text-sm font-medium text-fg mb-1">
-              {t('modal.create.taskBrief')}
-            </label>
-            <textarea
-              value={taskText}
-              onChange={(e) => setTaskText(e.target.value)}
-              rows={10}
-              className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent font-mono text-sm bg-bg"
-            />
-          </div>
         </div>
 
         {/* 底部 */}
         <div className="px-6 py-4 border-t border-border flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm text-fg hover:bg-bg-subtle rounded-lg transition-colors"
+            className="px-4 py-1.5 text-xs text-fg hover:bg-bg-subtle rounded-lg transition-colors"
           >
             {t('common.cancel')}
           </button>
           <button
             onClick={handleSubmit}
             disabled={!canSubmit}
-            className="px-4 py-2 text-sm bg-accent text-fg-inverse rounded-lg hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-1.5 text-xs bg-accent text-fg-inverse rounded-lg hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {t('modal.create.submit')}
           </button>

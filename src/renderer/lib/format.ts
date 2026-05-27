@@ -32,6 +32,24 @@ export const ACTOR_DISPLAY_NAME: Record<string, string> = {
   kimi: 'Kimi'
 }
 
+const EVENT_TYPE_KEY: Record<string, TranslationKey> = {
+  'task.created': 'event.task.created',
+  'task.done': 'event.task.done',
+  'task.updated': 'event.task.updated',
+  'actor.started': 'event.actor.started',
+  'actor.completed': 'event.actor.completed',
+  'actor.finished': 'event.actor.finished',
+  'actor.failed': 'event.actor.failed',
+  'actor.interrupted': 'event.actor.interrupted',
+  'actor.stderr': 'event.actor.stderr',
+  'permission.detected': 'event.permission.detected'
+}
+
+export function eventTypeLabel(type: string, lang: Language): string {
+  const key = EVENT_TYPE_KEY[type]
+  return key ? translate(lang, key) : type
+}
+
 export type Actor = 'claude' | 'codex' | 'opencode' | 'kimi'
 
 export function taskActors(settings: TaskSettings | null | undefined): {

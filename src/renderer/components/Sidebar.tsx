@@ -259,6 +259,7 @@ function ChatSidebar({
 
   const [pinnedTaskIds, setPinnedTaskIds] = useState<string[]>(() => readStringArraySetting('buddy.pinnedTaskIds'))
   const [collapsedProjectKeys, setCollapsedProjectKeys] = useState<string[]>(() => readStringArraySetting('buddy.collapsedProjectKeys'))
+  const [expandedTaskProjects, setExpandedTaskProjects] = useState<Set<string>>(new Set())
 
   const togglePin = useCallback((taskId: string) => {
     setPinnedTaskIds(prev => {
@@ -274,6 +275,15 @@ function ChatSidebar({
         ? prev.filter(key => key !== projectKey)
         : [...prev, projectKey]
       writeStringArraySetting('buddy.collapsedProjectKeys', next)
+      return next
+    })
+  }, [])
+
+  const toggleTaskExpand = useCallback((projectKey: string) => {
+    setExpandedTaskProjects(prev => {
+      const next = new Set(prev)
+      if (next.has(projectKey)) next.delete(projectKey)
+      else next.add(projectKey)
       return next
     })
   }, [])
@@ -491,7 +501,8 @@ function ChatSidebar({
                   {!isExpanded ? null : workspaceTasks.length === 0 ? (
                     <div className="px-3 py-1.5 ml-2 text-xs text-fg-muted">{t('sidebar.noConversation')}</div>
                   ) : (
-                    workspaceTasks.map((task) => {
+                    <>
+                      {(expandedTaskProjects.has(projectKey) ? workspaceTasks : workspaceTasks.slice(0, 10)).map((task) => {
                       const isSelected = selectedTaskId === task.task_id
                       const isRunning = statusClass(task.status) === 'running'
                       return (
@@ -545,7 +556,16 @@ function ChatSidebar({
                           </div>
                         </div>
                       )
-                    })
+                    })}
+                    {workspaceTasks.length > 10 && (
+                      <button
+                        onClick={() => toggleTaskExpand(projectKey)}
+                        className="text-xs text-fg-secondary hover:text-fg py-1 ml-5"
+                      >
+                        {expandedTaskProjects.has(projectKey) ? t('sidebar.tasksCollapse') : t('sidebar.tasksExpand')}
+                      </button>
+                    )}
+                    </>
                   )}
                 </div>
               )

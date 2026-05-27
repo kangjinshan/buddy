@@ -110,6 +110,8 @@ const en = {
   'sidebar.renameTitle': 'Rename project',
   'sidebar.roundN': 'Round {n}',
   'sidebar.deleteFail': 'Delete failed: {message}',
+  'sidebar.tasksExpand': 'Show all',
+  'sidebar.tasksCollapse': 'Collapse',
 
   // Settings tabs
   'settings.tab.general': 'General',
@@ -193,6 +195,8 @@ const en = {
   'statusBar.taskSettings': 'Task settings',
   'statusBar.events': 'Events',
   'statusBar.eventsEmpty': 'No events.',
+  'statusBar.eventsExpand': 'Show all',
+  'statusBar.eventsCollapse': 'Collapse',
   'statusBar.roundCount': 'Rounds: {n}',
   'statusBar.roundDash': 'Rounds: -',
   'statusBar.updated': 'Updated: {time}',
@@ -207,6 +211,18 @@ const en = {
   'statusBar.summary.implementer': 'Implementer',
   'statusBar.summary.reviewer': 'Reviewer',
   'statusBar.summary.repoRoot': 'Working dir',
+
+  // Event types
+  'event.task.created': 'Created',
+  'event.task.done': 'Completed',
+  'event.task.updated': 'Updated',
+  'event.actor.started': 'Started',
+  'event.actor.completed': 'Turn done',
+  'event.actor.finished': 'Finished',
+  'event.actor.failed': 'Failed',
+  'event.actor.interrupted': 'Interrupted',
+  'event.actor.stderr': 'Stderr',
+  'event.permission.detected': 'Permission',
 
   // Create task modal
   'modal.create.title': 'New task',
@@ -302,6 +318,8 @@ const zhCN: typeof en = {
   'sidebar.renameTitle': '修改项目名称',
   'sidebar.roundN': '第 {n} 轮',
   'sidebar.deleteFail': '删除失败：{message}',
+  'sidebar.tasksExpand': '展开显示',
+  'sidebar.tasksCollapse': '折叠显示',
 
   'settings.tab.general': '常规',
   'settings.tab.appearance': '外观',
@@ -376,6 +394,8 @@ const zhCN: typeof en = {
   'statusBar.taskSettings': '任务设置',
   'statusBar.events': '过程事件',
   'statusBar.eventsEmpty': '暂无事件。',
+  'statusBar.eventsExpand': '展开显示',
+  'statusBar.eventsCollapse': '折叠显示',
   'statusBar.roundCount': '轮次：{n}',
   'statusBar.roundDash': '轮次：-',
   'statusBar.updated': '更新：{time}',
@@ -390,6 +410,18 @@ const zhCN: typeof en = {
   'statusBar.summary.implementer': '执行者',
   'statusBar.summary.reviewer': '审查者',
   'statusBar.summary.repoRoot': '工作目录',
+
+  // Event types
+  'event.task.created': '已创建',
+  'event.task.done': '已完成',
+  'event.task.updated': '已更新',
+  'event.actor.started': '已启动',
+  'event.actor.completed': '回合完成',
+  'event.actor.finished': '已结束',
+  'event.actor.failed': '执行失败',
+  'event.actor.interrupted': '已打断',
+  'event.actor.stderr': '错误输出',
+  'event.permission.detected': '权限请求',
 
   'modal.create.title': '新建任务',
   'modal.create.taskName': '任务名称',
@@ -484,6 +516,8 @@ const zhTW: typeof en = {
   'sidebar.renameTitle': '變更專案名稱',
   'sidebar.roundN': '第 {n} 輪',
   'sidebar.deleteFail': '刪除失敗：{message}',
+  'sidebar.tasksExpand': '展開顯示',
+  'sidebar.tasksCollapse': '收合顯示',
 
   'settings.tab.general': '一般',
   'settings.tab.appearance': '外觀',
@@ -558,6 +592,8 @@ const zhTW: typeof en = {
   'statusBar.taskSettings': '任務設定',
   'statusBar.events': '事件記錄',
   'statusBar.eventsEmpty': '暫無事件。',
+  'statusBar.eventsExpand': '展開顯示',
+  'statusBar.eventsCollapse': '收合顯示',
   'statusBar.roundCount': '輪次：{n}',
   'statusBar.roundDash': '輪次：-',
   'statusBar.updated': '更新：{time}',
@@ -572,6 +608,18 @@ const zhTW: typeof en = {
   'statusBar.summary.implementer': '執行者',
   'statusBar.summary.reviewer': '審查者',
   'statusBar.summary.repoRoot': '工作目錄',
+
+  // Event types
+  'event.task.created': '已建立',
+  'event.task.done': '已完成',
+  'event.task.updated': '已更新',
+  'event.actor.started': '已啟動',
+  'event.actor.completed': '回合完成',
+  'event.actor.finished': '已結束',
+  'event.actor.failed': '執行失敗',
+  'event.actor.interrupted': '已中斷',
+  'event.actor.stderr': '錯誤輸出',
+  'event.permission.detected': '權限請求',
 
   'modal.create.title': '新增任務',
   'modal.create.taskName': '任務名稱',

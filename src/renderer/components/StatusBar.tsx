@@ -9,7 +9,8 @@ import {
   taskActors,
   formatTime,
   decodeErrorText,
-  eventPayloadSummary
+  eventPayloadSummary,
+  eventTypeLabel
 } from '../lib/format'
 import { useLanguage, useT } from '../hooks/useI18n'
 import type { TFunction } from '../hooks/useI18n'
@@ -122,7 +123,7 @@ export function StatusBar({
             lang={lang}
           />
 
-          <div className="flex items-center gap-3 text-xs text-fg-secondary mb-3">
+          <div className="flex items-center justify-between text-xs text-fg-secondary mb-3">
             <span>{roundLabel}</span>
             <span>{t('statusBar.updated', { time: updatedText })}</span>
           </div>
@@ -316,13 +317,15 @@ function ActorCard({
 }
 
 function EventLog({ events, t, lang }: { events: Event[]; t: TFunction; lang: Language }) {
+  const [expanded, setExpanded] = useState(false)
   if (!events.length) {
     return <div className="px-4 pb-4 text-xs text-fg-muted">{t('statusBar.eventsEmpty')}</div>
   }
-  const recent = events.slice(-10).reverse()
+  const canExpand = events.length > 10
+  const displayed = expanded ? [...events].reverse() : events.slice(-10).reverse()
   return (
     <div className="px-4 pb-3 space-y-2">
-      {recent.map((event) => {
+      {displayed.map((event) => {
         const failed =
           event.type?.endsWith('.failed') ||
           event.type?.endsWith('.error') ||
@@ -331,8 +334,8 @@ function EventLog({ events, t, lang }: { events: Event[]; t: TFunction; lang: La
         return (
           <div key={event.seq} className="text-xs">
             <div className="flex items-baseline justify-between gap-3">
-              <span className={`font-medium truncate ${failed ? 'text-danger' : ''}`}>
-                {event.seq} · {event.type}
+              <span className={`truncate ${failed ? 'text-danger' : ''}`}>
+                {event.seq} · {eventTypeLabel(event.type, lang)}
               </span>
               <span className="text-fg-secondary flex-shrink-0">
                 {event.actor ? `${actorLabel(event.actor, t)} ` : ''}
@@ -347,6 +350,14 @@ function EventLog({ events, t, lang }: { events: Event[]; t: TFunction; lang: La
           </div>
         )
       })}
+      {canExpand && (
+        <button
+          onClick={() => setExpanded(v => !v)}
+          className="text-xs text-fg-secondary hover:text-fg py-1"
+        >
+          {expanded ? t('statusBar.eventsCollapse') : t('statusBar.eventsExpand')}
+        </button>
+      )}
     </div>
   )
 }
