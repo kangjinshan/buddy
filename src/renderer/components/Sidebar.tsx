@@ -371,14 +371,13 @@ function ChatSidebar({
                       } ${task.status === 'DONE' ? 'task-done' : ''}`}
                     >
                       <div className="flex h-full items-center gap-2">
-                        <span className={`status-dot status-dot-${statusClass(task.status)} ${isRunning ? 'status-dot-pulse' : ''}`} />
+                        <span className={`status-dot status-dot-${statusClass(task.status)} ${unread ? 'status-dot-unread' : 'status-dot-read'} ${isRunning ? 'status-dot-pulse' : ''}`} />
                         <span className={`text-xs truncate flex-1 ${
-                            isSelected ? 'text-fg' : unread ? 'text-fg font-medium' : 'text-fg-secondary'
+                            isSelected ? 'text-fg' : 'text-fg-secondary'
                         }`}>
                           {task.task_id}
                         </span>
                         <span className="text-xs text-fg-muted truncate max-w-[60px]">{proj}</span>
-                        {unread && <span className="unread-dot" />}
                         <span className={`task-status-text status-text-${statusClass(task.status)}`}>
                           {statusText(task.status, t)}
                         </span>
@@ -514,13 +513,12 @@ function ChatSidebar({
                           } ${task.status === 'DONE' ? 'task-done' : ''}`}
                         >
                           <div className="flex h-full items-center gap-2">
-                            <span className={`status-dot status-dot-${statusClass(task.status)} ${isRunning ? 'status-dot-pulse' : ''}`} />
+                            <span className={`status-dot status-dot-${statusClass(task.status)} ${unread ? 'status-dot-unread' : 'status-dot-read'} ${isRunning ? 'status-dot-pulse' : ''}`} />
                             <span className={`text-xs truncate flex-1 ${
-                          isSelected ? 'text-fg' : unread ? 'text-fg font-medium' : 'text-fg-secondary'
+                          isSelected ? 'text-fg' : 'text-fg-secondary'
                             }`}>
                               {task.task_id}
                             </span>
-                            {unread && <span className="unread-dot" />}
                             <span className={`task-status-text status-text-${statusClass(task.status)}`}>
                               {statusText(task.status, t)}
                             </span>
