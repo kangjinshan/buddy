@@ -85,14 +85,25 @@ export async function getGitRemotes(cwd: string): Promise<GitRemote[]> {
   }
 }
 
+export async function getGitUntrackedCount(cwd: string): Promise<number> {
+  try {
+    const output = await execGit(['ls-files', '--others', '--exclude-standard'], cwd)
+    if (!output.trim()) return 0
+    return output.split('\n').filter(Boolean).length
+  } catch {
+    return 0
+  }
+}
+
 export async function getGitStatus(cwd: string): Promise<GitStatusResult> {
-  const [branch, diff, staged, remotes] = await Promise.all([
+  const [branch, diff, staged, untracked, remotes] = await Promise.all([
     getGitBranch(cwd),
     getGitDiffStats(cwd),
     getGitStagedStats(cwd),
+    getGitUntrackedCount(cwd),
     getGitRemotes(cwd)
   ])
-  return { branch, diff, staged, remotes }
+  return { branch, diff, staged, untracked, remotes }
 }
 
 export async function gitStageAll(cwd: string): Promise<void> {

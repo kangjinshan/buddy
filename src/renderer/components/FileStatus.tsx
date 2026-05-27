@@ -44,7 +44,7 @@ export function FileStatus({ gitStatus, isLoading, repoRoot, onOpenCommit }: Fil
 
   const totalInsertions = (gitStatus.diff?.insertions ?? 0) + (gitStatus.staged?.insertions ?? 0)
   const totalDeletions = (gitStatus.diff?.deletions ?? 0) + (gitStatus.staged?.deletions ?? 0)
-  const totalFiles = (gitStatus.diff?.filesChanged ?? 0) + (gitStatus.staged?.filesChanged ?? 0)
+  const totalFiles = (gitStatus.diff?.filesChanged ?? 0) + (gitStatus.staged?.filesChanged ?? 0) + gitStatus.untracked
   const hasChanges = totalFiles > 0
 
   return (
@@ -118,8 +118,8 @@ export function CommitModal({ gitStatus, repoRoot, onClose, onSuccess, onError }
 
   const totalInsertions = (gitStatus?.diff?.insertions ?? 0) + (gitStatus?.staged?.insertions ?? 0)
   const totalDeletions = (gitStatus?.diff?.deletions ?? 0) + (gitStatus?.staged?.deletions ?? 0)
-  const totalFiles = (gitStatus?.diff?.filesChanged ?? 0) + (gitStatus?.staged?.filesChanged ?? 0)
-  const hasUnstaged = (gitStatus?.diff?.filesChanged ?? 0) > 0
+  const totalFiles = (gitStatus?.diff?.filesChanged ?? 0) + (gitStatus?.staged?.filesChanged ?? 0) + (gitStatus?.untracked ?? 0)
+  const hasUnstaged = (gitStatus?.diff?.filesChanged ?? 0) > 0 || (gitStatus?.untracked ?? 0) > 0
   const hasStaged = (gitStatus?.staged?.filesChanged ?? 0) > 0
 
   const handleStageAll = useCallback(async () => {
@@ -185,10 +185,12 @@ export function CommitModal({ gitStatus, repoRoot, onClose, onSuccess, onError }
       onKeyDown={(e) => {
         if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && message.trim() && !isBusy) {
           e.preventDefault()
+          e.stopPropagation()
           handleCommit()
         }
-        if (e.key === 'Escape' && !isBusy) {
+        if (e.key === 'Escape') {
           e.preventDefault()
+          e.stopPropagation()
           onClose()
         }
       }}
@@ -286,12 +288,14 @@ export function CommitModal({ gitStatus, repoRoot, onClose, onSuccess, onError }
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                   e.preventDefault()
+                  e.stopPropagation()
                   if (message.trim() && !isBusy) {
                     handleCommit()
                   }
                 }
-                if (e.key === 'Escape' && !isBusy) {
+                if (e.key === 'Escape') {
                   e.preventDefault()
+                  e.stopPropagation()
                   onClose()
                 }
               }}
@@ -307,8 +311,7 @@ export function CommitModal({ gitStatus, repoRoot, onClose, onSuccess, onError }
         <div className="px-5 py-3 border-t border-border flex justify-end gap-3">
           <button
             onClick={onClose}
-            disabled={isBusy}
-            className="px-4 py-1.5 text-xs text-fg hover:bg-bg-subtle rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1"
+            className="px-4 py-1.5 text-xs text-fg hover:bg-bg-subtle rounded-lg transition-colors flex items-center gap-1"
           >
             {t('common.cancel')} <span className="opacity-60">⎋</span>
           </button>

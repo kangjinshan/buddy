@@ -212,5 +212,6 @@ export interface GitStatusResult {
   branch: string
   diff: GitDiffStats | null
   staged: GitDiffStats | null
+  untracked: number
   remotes: GitRemote[]
 }

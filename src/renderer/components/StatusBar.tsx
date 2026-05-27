@@ -220,7 +220,15 @@ export function StatusBar({
         <CommitModal
           gitStatus={gitStatus}
           repoRoot={repoRoot}
-          onClose={() => setShowCommitModal(false)}
+          onClose={() => {
+            setShowCommitModal(false)
+            requestAnimationFrame(() => {
+              const active = document.activeElement
+              if (active instanceof HTMLElement && active.closest('details')) {
+                active.blur()
+              }
+            })
+          }}
           onSuccess={(msg) => { setCommitFeedback({ type: 'success', message: msg }); setShowCommitModal(false) }}
           onError={(msg) => { setCommitFeedback({ type: 'error', message: msg }) }}
         />
