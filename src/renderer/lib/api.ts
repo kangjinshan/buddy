@@ -41,8 +41,8 @@ export const api = {
     buddy().gitStatus(repoRoot),
   gitStageAll: (repoRoot: string) =>
     buddy().gitStageAll(repoRoot),
-  gitCommitAndPush: (repoRoot: string, message: string, remote: string) =>
-    buddy().gitCommitAndPush(repoRoot, message, remote),
+  gitCommitAndPush: (repoRoot: string, message: string, remote: string, push?: boolean) =>
+    buddy().gitCommitAndPush(repoRoot, message, remote, push),
   gitDiffForCommitMessage: (repoRoot: string) =>
     buddy().gitDiffForCommitMessage(repoRoot),
   generateCommitMessage: (repoRoot: string, actorCommand?: string, lang?: string) =>

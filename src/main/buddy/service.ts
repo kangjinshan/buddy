@@ -112,8 +112,8 @@ export class BuddyCoreService {
     return gitStageAll(repoRoot)
   }
 
-  gitCommitAndPush(repoRoot: string, message: string, remote: string): Promise<{ commitHash: string }> {
-    return gitCommitAndPush(repoRoot, message, remote)
+  gitCommitAndPush(repoRoot: string, message: string, remote: string, push?: boolean): Promise<{ commitHash: string }> {
+    return gitCommitAndPush(repoRoot, message, remote, push)
   }
 
   gitDiffForCommitMessage(repoRoot: string): Promise<string> {

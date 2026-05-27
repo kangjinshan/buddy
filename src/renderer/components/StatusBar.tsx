@@ -302,7 +302,7 @@ function ActorCard({
   }
 
   return (
-    <div className={`rounded-lg border border-border-subtle p-3 ${running ? 'bg-bg-subtle' : 'bg-bg-elevated'}`}>
+    <div className={`rounded-lg border p-3 bg-bg-elevated ${running ? '' : 'border-border-subtle'}`} style={running ? { borderColor: `var(--actor-${actor})` } : undefined}>
       <div className="flex items-center justify-between mb-1.5">
         <span className="text-sm font-medium">{ACTOR_DISPLAY_NAME[actor]}</span>
         {roleKey && <span className="text-xs text-fg-secondary">{t(roleKey)}</span>}

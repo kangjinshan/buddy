@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { GitBranch, GitCommit, FileDiff, FileText, Loader2, Plus, Minus, Sparkles } from 'lucide-react'
+import { GitBranch, GitCommit, FileDiff, FileText, Loader2, Plus, Minus, Sparkles, Upload } from 'lucide-react'
 import type { GitStatusResult, GitRemote } from '../../shared/types'
 import { useGitStageAll, useGitCommitAndPush } from '../hooks/useBuddy'
 import { useT } from '../hooks/useI18n'
@@ -116,6 +116,8 @@ export function CommitModal({ gitStatus, repoRoot, onClose, onSuccess, onError }
     if (stored && remoteNames.includes(stored)) return stored
     return remoteNames[0] ?? 'origin'
   })
+  const hasRemotes = (gitStatus?.remotes.length ?? 0) > 0
+  const [shouldPush, setShouldPush] = useState(hasRemotes)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const stageAll = useGitStageAll()
@@ -183,15 +185,19 @@ export function CommitModal({ gitStatus, repoRoot, onClose, onSuccess, onError }
       const result = await commitAndPush.mutateAsync({
         repoRoot,
         message: message.trim(),
-        remote: selectedRemote
+        remote: selectedRemote,
+        push: shouldPush
       }) as { commitHash: string }
-      onSuccess(t('git.commitSuccess', { remote: selectedRemote, hash: result.commitHash }))
+      onSuccess(shouldPush
+        ? t('git.commitSuccess', { remote: selectedRemote, hash: result.commitHash })
+        : t('git.commitOnlySuccess', { hash: result.commitHash })
+      )
     } catch (e) {
       onError(t('git.commitFailed', { message: e instanceof Error ? e.message : String(e) }))
     } finally {
       setIsCommitting(false)
     }
-  }, [message, repoRoot, selectedRemote, hasUnstaged, stageAll, commitAndPush, onSuccess, onError, t])
+  }, [message, repoRoot, selectedRemote, shouldPush, hasUnstaged, stageAll, commitAndPush, onSuccess, onError, t])
 
   // Persist last-used remote for this repo
   useEffect(() => {
@@ -333,21 +339,37 @@ export function CommitModal({ gitStatus, repoRoot, onClose, onSuccess, onError }
         </div>
 
         {/* 底部 */}
-        <div className="px-5 py-3 border-t border-border flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-1.5 text-xs text-fg hover:bg-bg-subtle rounded-lg transition-colors flex items-center gap-1"
-          >
-            {t('common.cancel')} <span className="opacity-60">⎋</span>
-          </button>
+        <div className="px-5 py-3 border-t border-border flex items-center justify-between">
+          <label className="flex items-center gap-2 text-xs cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={shouldPush}
+              onChange={(e) => setShouldPush(e.target.checked)}
+              disabled={!hasRemotes}
+              className="accent-accent-primary"
+            />
+            <Upload size={13} className="text-fg-muted" />
+            <span className="text-fg-secondary">{t('git.push')}</span>
+            {!hasRemotes && (
+              <span className="text-fg-muted ml-1">({t('git.noRemote')})</span>
+            )}
+          </label>
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="px-4 py-1.5 text-xs text-fg hover:bg-bg-subtle rounded-lg transition-colors flex items-center gap-1"
+            >
+              {t('common.cancel')} <span className="opacity-60">⎋</span>
+            </button>
           <button
             onClick={handleCommit}
             disabled={!message.trim() || isBusy}
             className="px-4 py-1.5 text-xs bg-accent-primary text-fg-inverse rounded-lg hover:bg-accent-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
           >
             {isCommitting && <Loader2 size={12} className="animate-spin" />}
-            {isCommitting ? t('git.committing') : t('git.commit')} <span className="opacity-60">⌘⏎</span>
-          </button>
+            {isCommitting ? t('git.committing') : shouldPush ? t('git.commitTitle') : t('git.commit')} <span className="opacity-60">⌘⏎</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>

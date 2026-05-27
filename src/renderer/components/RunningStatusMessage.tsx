@@ -61,12 +61,9 @@ function formatElapsed(startedAt: string): string {
   return `${hour}h ${remainMin}m`
 }
 
-function actorClass(actor: string): string {
-  if (actor === 'claude') return 'msg-claude'
-  if (actor === 'codex') return 'msg-codex'
-  if (actor === 'opencode') return 'msg-opencode'
-  if (actor === 'kimi') return 'msg-kimi'
-  return 'msg-default'
+function actorColorVar(actor: string): string {
+  if (['claude', 'codex', 'opencode', 'kimi'].includes(actor)) return `var(--actor-${actor})`
+  return 'var(--border)'
 }
 
 export function RunningStatusMessage({ actor, startedAt }: { actor: string; startedAt: string; round?: number }) {
@@ -99,9 +96,9 @@ export function RunningStatusMessage({ actor, startedAt }: { actor: string; star
 
   return (
     <div className="flex mb-3 justify-start">
-      <div className={`message w-full ${actorClass(actor)} running-status`}>
+      <div className="message w-full running-status" style={{ borderColor: actorColorVar(actor) }}>
         <div className="message-head">
-          <span className="role">{actorLabel}</span>
+          <span className="role" style={{ color: actorColorVar(actor) }}>{actorLabel}</span>
           <span>{metaText}</span>
         </div>
         <div className="running-status-body">

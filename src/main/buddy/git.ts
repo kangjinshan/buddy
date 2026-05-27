@@ -113,11 +113,14 @@ export async function gitStageAll(cwd: string): Promise<void> {
 export async function gitCommitAndPush(
   cwd: string,
   message: string,
-  remote: string
+  remote: string,
+  push: boolean = true
 ): Promise<{ commitHash: string }> {
   await execGit(['commit', '-m', message], cwd)
   const commitHash = await execGit(['rev-parse', '--short', 'HEAD'], cwd)
-  await execGit(['push', remote], cwd)
+  if (push) {
+    await execGit(['push', remote], cwd)
+  }
   return { commitHash }
 }
 

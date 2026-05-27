@@ -186,8 +186,8 @@ export function useGitCommitAndPush() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ repoRoot, message, remote }: { repoRoot: string; message: string; remote: string }) =>
-      api.gitCommitAndPush(repoRoot, message, remote),
+    mutationFn: ({ repoRoot, message, remote, push }: { repoRoot: string; message: string; remote: string; push?: boolean }) =>
+      api.gitCommitAndPush(repoRoot, message, remote, push),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['gitStatus'] })
     }

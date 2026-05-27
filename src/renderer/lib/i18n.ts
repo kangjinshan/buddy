@@ -245,7 +245,10 @@ const en = {
   'git.stageAll': 'Stage all',
   'git.committing': 'Committing…',
   'git.pushing': 'Pushing…',
+  'git.push': 'Push after commit',
+  'git.noRemote': 'No remote',
   'git.commitSuccess': 'Committed and pushed to {remote} ({hash})',
+  'git.commitOnlySuccess': 'Committed ({hash})',
   'git.commitFailed': 'Commit failed: {message}',
   'git.noRepo': 'Not a git repo',
 
@@ -500,7 +503,10 @@ const zhCN: typeof en = {
   'git.stageAll': '暂存全部',
   'git.committing': '正在提交…',
   'git.pushing': '正在推送…',
+  'git.push': '提交后推送',
+  'git.noRemote': '无远端',
   'git.commitSuccess': '已提交并推送到 {remote}（{hash}）',
+  'git.commitOnlySuccess': '已提交（{hash}）',
   'git.commitFailed': '提交失败：{message}',
   'git.noRepo': '非 git 仓库',
 
@@ -753,7 +759,10 @@ const zhTW: typeof en = {
   'git.stageAll': '暫存全部',
   'git.committing': '正在提交…',
   'git.pushing': '正在推送…',
+  'git.push': '提交後推送',
+  'git.noRemote': '無遠端',
   'git.commitSuccess': '已提交並推送到 {remote}（{hash}）',
+  'git.commitOnlySuccess': '已提交（{hash}）',
   'git.commitFailed': '提交失敗：{message}',
   'git.noRepo': '非 git 儲存庫',
 

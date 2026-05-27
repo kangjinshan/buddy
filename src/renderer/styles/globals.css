@@ -275,17 +275,15 @@ body {
 
 /* ===== Running status card ===== */
 .message.running-status {
-  animation: buddy-breathe 1.9s ease-in-out infinite;
+  background: var(--bg-elevated);
+  border-width: 1px;
+  border-style: solid;
 }
 .running-status-body {
   color: var(--success-fg);
   font-style: italic;
   font-size: 13px;
   animation: hint-fade 2s ease-in-out infinite;
-}
-@keyframes buddy-breathe {
-  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--success-fg) 0%, transparent); }
-  50% { box-shadow: 0 0 8px 2px color-mix(in srgb, var(--success-fg) 18%, transparent); }
 }
 @keyframes hint-fade {
   0%, 100% { opacity: 0.6; }
