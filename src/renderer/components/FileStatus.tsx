@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { GitBranch, GitCommit, FileDiff, FileText, Loader2, Plus, Minus, Sparkles } from 'lucide-react'
 import type { GitStatusResult, GitRemote } from '../../shared/types'
 import { useGitStageAll, useGitCommitAndPush } from '../hooks/useBuddy'
@@ -111,6 +111,7 @@ export function CommitModal({ gitStatus, repoRoot, onClose, onSuccess, onError }
   const [selectedRemote, setSelectedRemote] = useState<string>(
     gitStatus?.remotes[0]?.name ?? 'origin'
   )
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const stageAll = useGitStageAll()
   const commitAndPush = useGitCommitAndPush()
@@ -148,6 +149,12 @@ export function CommitModal({ gitStatus, repoRoot, onClose, onSuccess, onError }
   useEffect(() => {
     handleGenerate()
   }, [handleGenerate])
+
+  useEffect(() => {
+    if (!isGenerating) {
+      textareaRef.current?.focus()
+    }
+  }, [isGenerating])
 
   const handleCommit = useCallback(async () => {
     if (!message.trim()) return
@@ -273,6 +280,7 @@ export function CommitModal({ gitStatus, repoRoot, onClose, onSuccess, onError }
               </button>
             </div>
             <textarea
+              ref={textareaRef}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={(e) => {
