@@ -134,6 +134,7 @@ export interface BootstrapResponse {
   version?: string
   repo_root: string
   data_root: string
+  home_dir: string
   workspace_key?: string
   tasks: Task[]
   global_settings?: GlobalSettings

@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react'
-import { Monitor, Moon, RotateCcw, Search, Sun } from 'lucide-react'
+import { createPortal } from 'react-dom'
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, ChevronDown, CircleArrowOutUpLeft, Command, CornerDownLeft, Delete, Monitor, Moon, Option, RotateCcw, Search, Space, Sun } from 'lucide-react'
 import { useTheme, ThemeMode } from '../hooks/useTheme'
 import { getThemesByType, getThemeById, BuddyTheme } from '../themes'
 import { useUpdateGlobalSettings } from '../hooks/useBuddy'
@@ -17,6 +18,7 @@ import {
   resetAllBindings,
   findConflict,
   formatBinding,
+  bindingToParts,
   eventToBinding,
   bindingsEqual,
 } from '../lib/keyboard'
@@ -98,29 +100,103 @@ export function SettingsContent({ tab, globalSettings }: SettingsContentProps) {
   )
 }
 
+function SendShortcutSelect({
+  options,
+  value,
+  onChange,
+  current
+}: {
+  options: Array<{ value: SendShortcut; symbol: string; text: string; desc: string }>
+  value: SendShortcut
+  onChange: (v: SendShortcut) => void
+  current: { symbol: string; text: string }
+}) {
+  const [open, setOpen] = useState(false)
+  const btnRef = useRef<HTMLButtonElement>(null)
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 })
+
+  const updatePos = useCallback(() => {
+    if (!btnRef.current) return
+    const r = btnRef.current.getBoundingClientRect()
+    setPos({ top: r.bottom + 4, left: r.left, width: r.width })
+  }, [])
+
+  useEffect(() => {
+    if (open) {
+      updatePos()
+      const onScroll = () => updatePos()
+      window.addEventListener('scroll', onScroll, true)
+      window.addEventListener('resize', updatePos)
+      return () => {
+        window.removeEventListener('scroll', onScroll, true)
+        window.removeEventListener('resize', updatePos)
+      }
+    }
+  }, [open, updatePos])
+
+  useEffect(() => {
+    if (!open) return
+    const onClickOutside = (e: MouseEvent) => {
+      if (!(e.target instanceof HTMLElement)) return
+      if (btnRef.current?.contains(e.target)) return
+      if (e.target.closest('[data-send-dropdown]')) return
+      setOpen(false)
+    }
+    document.addEventListener('mousedown', onClickOutside)
+    return () => document.removeEventListener('mousedown', onClickOutside)
+  }, [open])
+
+  return (
+    <>
+      <button
+        ref={btnRef}
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        className="flex items-center justify-between gap-1.5 px-2 py-1 text-sm bg-bg border border-border rounded-md focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent min-w-[220px]"
+      >
+        <div className="flex items-center gap-1.5">
+          <span className="w-6 text-right text-fg-muted">{current.symbol}</span>
+          <span>{current.text}</span>
+        </div>
+        <ChevronDown size={14} className="text-fg-muted" />
+      </button>
+      {open && createPortal(
+        <div
+          data-send-dropdown
+          className="fixed bg-bg-elevated border border-border rounded-lg shadow-lg z-[9999] py-1 min-w-[220px]"
+          style={{ top: pos.top, left: pos.left, width: btnRef.current?.getBoundingClientRect().width }}
+        >
+          {options.map(opt => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => { onChange(opt.value); setOpen(false) }}
+              className={`w-full flex items-center gap-1.5 px-3 py-1.5 text-sm hover:bg-bg-subtle transition-colors ${value === opt.value ? 'text-accent' : 'text-fg'}`}
+            >
+              <span className="w-6 text-right text-fg-muted shrink-0">{opt.symbol}</span>
+              <span>{opt.text}</span>
+            </button>
+          ))}
+        </div>,
+        document.body
+      )}
+    </>
+  )
+}
+
 function GeneralSection() {
   const t = useT()
   const { pref, setPref, detected } = useLanguagePref()
   const { shortcut, setShortcut } = useSendShortcut()
 
   const detectedLabel = detected === 'zh-CN' ? '简体中文' : detected === 'zh-TW' ? '繁體中文' : 'English'
-  const sendOptions: Array<{ value: SendShortcut; label: string; desc: string }> = [
-    {
-      value: 'shift-enter',
-      label: t('settings.general.send.shiftEnter'),
-      desc: t('settings.general.send.shiftEnterHint')
-    },
-    {
-      value: 'enter',
-      label: t('settings.general.send.enter'),
-      desc: t('settings.general.send.enterHint')
-    },
-    {
-      value: 'cmd-enter',
-      label: t('settings.general.send.cmdEnter'),
-      desc: t('settings.general.send.cmdEnterHint')
-    }
+
+  const sendOptions: Array<{ value: SendShortcut; symbol: string; text: string; desc: string }> = [
+    { value: 'shift-enter', symbol: '⇧⏎', text: t('settings.general.send.shiftEnter'), desc: t('settings.general.send.shiftEnterHint') },
+    { value: 'enter', symbol: '⏎', text: t('settings.general.send.enter'), desc: t('settings.general.send.enterHint') },
+    { value: 'cmd-enter', symbol: '⌘⏎', text: t('settings.general.send.cmdEnter'), desc: t('settings.general.send.cmdEnterHint') }
   ]
+  const currentSend = sendOptions.find(o => o.value === shortcut) ?? sendOptions[0]
 
   return (
     <div>
@@ -150,15 +226,12 @@ function GeneralSection() {
           title={t('settings.general.send.title')}
           description={t('settings.general.send.desc')}
           right={
-            <select
+            <SendShortcutSelect
+              options={sendOptions}
               value={shortcut}
-              onChange={(e) => setShortcut(e.target.value as SendShortcut)}
-              className="px-2 py-1 text-sm bg-bg border border-border rounded-md focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"
-            >
-              {sendOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
+              onChange={setShortcut}
+              current={currentSend}
+            />
           }
         />
       </SettingsList>
@@ -653,12 +726,14 @@ function ShortcutRow({ def, binding, isRecording, conflictId, isModified, onStar
       <div className="flex items-center">
         <button
           onClick={def.readonly ? undefined : onStartRecording}
-          className={`rounded-md border px-2.5 py-1 text-xs font-mono transition-colors ${isRecording
-            ? 'border-accent bg-accent/10 text-accent'
-            : 'border-border-subtle bg-bg-muted text-fg-secondary shadow-sm hover:border-fg-muted'
+          className={`flex items-center gap-[3px] rounded-md px-2 py-1 transition-colors ${isRecording
+            ? 'ring-1 ring-accent bg-accent/10'
+            : 'hover:bg-bg-subtle'
             } ${def.readonly ? 'cursor-default' : 'cursor-pointer'}`}
         >
-          {formatBinding(binding)}
+          {bindingToParts(binding).map((part, i) => (
+            <KeyCap key={i} part={part} highlighted={isRecording} />
+          ))}
         </button>
       </div>
       <div className="flex items-center">
@@ -673,6 +748,49 @@ function ShortcutRow({ def, binding, isRecording, conflictId, isModified, onStar
         )}
       </div>
     </div>
+  )
+}
+
+const KEY_ICON_SIZE = 12
+
+const ICON_KEYS = new Set(['meta', 'alt', 'Enter', 'Escape', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Backspace', ' '])
+
+function KeyCapIcon({ partKey }: { partKey: string }) {
+  const props = { size: KEY_ICON_SIZE, strokeWidth: 2 }
+  switch (partKey) {
+    case 'meta': return <Command {...props} />
+    case 'alt': return <Option {...props} />
+    case 'Enter': return <CornerDownLeft {...props} />
+    case 'Escape': return <CircleArrowOutUpLeft {...props} />
+    case 'ArrowUp': return <ArrowUp {...props} />
+    case 'ArrowDown': return <ArrowDown {...props} />
+    case 'ArrowLeft': return <ArrowLeft {...props} />
+    case 'ArrowRight': return <ArrowRight {...props} />
+    case 'Backspace': return <Delete {...props} />
+    case ' ': return <Space {...props} />
+    default: return null
+  }
+}
+
+function KeyCap({ part, highlighted }: { part: import('../lib/keyboard').KeyPart; highlighted: boolean }) {
+  const hasIcon = ICON_KEYS.has(part.key)
+  const showLabelWithIcon = part.key === 'Escape'
+
+  return (
+    <kbd
+      className={`inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 rounded-[5px] border text-[11px] font-sans leading-none select-none ${
+        highlighted
+          ? 'border-accent/50 bg-accent/10 text-accent'
+          : 'border-border-subtle bg-bg-muted text-fg-secondary shadow-[0_1px_0_0_var(--border)]'
+      }`}
+    >
+      {hasIcon ? (
+        <>
+          <KeyCapIcon partKey={part.key} />
+          {showLabelWithIcon && <span className="ml-1">Escape</span>}
+        </>
+      ) : part.label}
+    </kbd>
   )
 }
 

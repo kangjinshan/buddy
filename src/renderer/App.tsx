@@ -123,7 +123,7 @@ export default function App() {
     settings: Record<string, unknown>
   ) => {
     try {
-      const finalRepoRoot = repoRoot || bootstrap?.repo_root || ''
+      const finalRepoRoot = (repoRoot && repoRoot !== '/' ? repoRoot : null) || bootstrap?.home_dir || ''
       const result = await createTask.mutateAsync({
         task_id: taskId,
         repo_root: finalRepoRoot || undefined,
@@ -161,7 +161,7 @@ export default function App() {
       const last = localStorage.getItem('buddy.lastRepoRoot')
       if (last) return last
     } catch {}
-    return bootstrap?.repo_root ?? ''
+    return bootstrap?.home_dir ?? ''
   })()
 
   const handleSendMessage = useCallback((message: string, actor?: string) => {
@@ -541,7 +541,12 @@ function CreateTaskModal({
   const actorOptions: Actor[] = ['claude', 'codex', 'opencode', 'kimi']
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onKeyDown={(e) => {
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && canSubmit) {
+        e.preventDefault()
+        handleSubmit()
+      }
+    }}>
       <div className="bg-bg-elevated rounded-xl shadow-xl w-[760px] max-h-[85vh] flex flex-col">
         {/* 头部 */}
         <div className="px-6 py-4 border-b border-border">
@@ -687,7 +692,7 @@ function CreateTaskModal({
             disabled={!canSubmit}
             className="px-4 py-1.5 text-xs bg-accent-primary text-fg-inverse rounded-lg hover:bg-accent-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {t('modal.create.submit')}
+            {t('modal.create.submit')} <span className="opacity-60 ml-1">⌘⏎</span>
           </button>
         </div>
       </div>

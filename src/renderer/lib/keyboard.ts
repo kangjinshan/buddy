@@ -272,6 +272,27 @@ export function formatBinding(binding: KeyBinding): string {
   return parts.join('')
 }
 
+/** Key part for individual key-cap rendering */
+export interface KeyPart {
+  type: 'modifier' | 'key'
+  /** Machine key name, e.g. 'meta', 'shift', 'Enter', 'n' */
+  key: string
+  /** Display label for text-rendered keys */
+  label: string
+}
+
+/** Decompose a KeyBinding into individual key parts for separate rendering */
+export function bindingToParts(binding: KeyBinding): KeyPart[] {
+  const parts: KeyPart[] = []
+  if (binding.ctrlKey)  parts.push({ type: 'modifier', key: 'ctrl',  label: MAC_SYMBOLS['ctrl'] })
+  if (binding.altKey)   parts.push({ type: 'modifier', key: 'alt',   label: MAC_SYMBOLS['alt'] })
+  if (binding.shiftKey) parts.push({ type: 'modifier', key: 'shift', label: MAC_SYMBOLS['shift'] })
+  if (binding.metaKey)  parts.push({ type: 'modifier', key: 'meta',  label: MAC_SYMBOLS['meta'] })
+  const displayKey = MAC_SYMBOLS[binding.key] ?? binding.key.toUpperCase()
+  parts.push({ type: 'key', key: binding.key, label: displayKey })
+  return parts
+}
+
 /** Parse a KeyboardEvent into a KeyBinding for recording */
 export function eventToBinding(e: KeyboardEvent): KeyBinding | null {
   // Ignore lone modifier presses
