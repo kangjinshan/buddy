@@ -2,6 +2,7 @@ stages:
   - test
   - build
   - package
+  - upload
   - release
   - deploy
 
@@ -124,7 +125,7 @@ package:source:
 # Upload artifacts to Generic Package Registry
 # -------------------------------------------------------
 upload:artifacts:
-  stage: release
+  stage: upload
   image: alpine:latest
   rules: *rule_release
   needs:
