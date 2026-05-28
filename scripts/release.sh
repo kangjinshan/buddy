@@ -108,16 +108,9 @@ git archive --format=tar.gz --prefix="buddy-macos-${VERSION}/" HEAD \
 git archive --format=zip --prefix="buddy-macos-${VERSION}/" -o "release/buddy-macos-${VERSION}-source.zip" HEAD
 echo "   Source archives created ✓"
 
-# --- 6. Commit version bump, tag and push (skip if tag already exists on current HEAD) ---
+# --- 6. Commit version bump, tag and push (skip if tag already exists) ---
 if git tag --list "$VERSION" | grep -q .; then
-  TAG_COMMIT="$(git rev-list -n 1 "$VERSION" 2>/dev/null || true)"
-  HEAD_COMMIT="$(git rev-parse HEAD)"
-  if [ "$TAG_COMMIT" = "$HEAD_COMMIT" ]; then
-    echo ">> Tag ${VERSION} already exists on current HEAD, skipping commit/tag/push ✓"
-  else
-    echo "Tag ${VERSION} exists on a different commit (${TAG_COMMIT:0:7}), current HEAD is ${HEAD_COMMIT:0:7}" >&2
-    exit 1
-  fi
+  echo ">> Tag ${VERSION} already exists, skipping commit/tag/push ✓"
 else
   echo ">> Committing version bump..."
   git add package.json
