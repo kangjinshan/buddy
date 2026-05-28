@@ -107,7 +107,6 @@ package:macos:
 # -------------------------------------------------------
 package:source:
   stage: package
-  tags: [macos]
   rules: *rule_release
   needs: []
   script:
