@@ -29,7 +29,7 @@ command -v glab >/dev/null \
 
 # --- Config ---
 RSYNC_PASS_FILE="${RSYNC_PASS_FILE:-$HOME/.rsyncd.pass}"
-RSYNC_DEST="buddyweb@10.185.10.105::buddyweb-releases/"
+RSYNC_DEST="rsync://buddyweb@10.185.10.105/buddyweb-releases/"
 PACKAGE_NAME="buddy-macos"
 
 # --- Derive GitLab info from remote ---
