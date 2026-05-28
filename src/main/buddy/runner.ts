@@ -1,5 +1,4 @@
-import { randomBytes } from 'node:crypto'
-import { access, mkdir, readFile, writeFile } from 'node:fs/promises'
+import { access, appendFile, mkdir, readFile, unlink, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type {
   AttachmentMeta,
@@ -291,9 +290,9 @@ export class BuddyRunner {
     const cwd = await existingCwd(detail.state.repo_root)
     const existingSessionId = sessionIdForActor(actor, detail.state, detail.settings)
     const commandKind = commandKindFor(actor, launcher.command)
-    const sessionId = actor === 'kimi' && commandKind === 'native_kimi' && !existingSessionId
-      ? randomBytes(8).toString('hex')
-      : existingSessionId
+    const sessionId = actor === 'kimi' && commandKind === 'native_kimi'
+      ? existingSessionId
+      : (existingSessionId ?? undefined)
     const command = buildLauncherCommand({
       actor,
       command: launcher.command,

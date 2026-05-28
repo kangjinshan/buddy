@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildLauncherCommand } from '../../../src/main/buddy/launchers'
+import { buildLauncherCommand, setKimiVariant } from '../../../src/main/buddy/launchers'
 
 describe('launcher command builder', () => {
   it('builds Claude non-interactive stream-json command', () => {
@@ -116,7 +116,30 @@ describe('launcher command builder', () => {
     })
   })
 
-  it('builds Kimi stream-json command with prompt on stdin', () => {
+  it('builds kimi-code stream-json command with -p prompt', () => {
+    setKimiVariant('kimi', 'kimi-code')
+    expect(buildLauncherCommand({
+      actor: 'kimi',
+      command: 'kimi',
+      promptFile: '/tmp/prompt.md',
+      promptText: 'hello from prompt',
+      sessionId: 'kimi-session'
+    })).toEqual({
+      command: 'kimi',
+      args: [
+        '-p',
+        'hello from prompt',
+        '--output-format',
+        'stream-json',
+        '-S',
+        'kimi-session'
+      ],
+      kind: 'native_kimi'
+    })
+  })
+
+  it('builds kimi-cli stream-json command with --print and -p', () => {
+    setKimiVariant('kimi', 'kimi-cli')
     expect(buildLauncherCommand({
       actor: 'kimi',
       command: 'kimi',
@@ -129,13 +152,12 @@ describe('launcher command builder', () => {
         '--print',
         '--output-format',
         'stream-json',
-        '--input-format',
-        'text',
-        '--session',
+        '-p',
+        'hello from prompt',
+        '-r',
         'kimi-session'
       ],
-      kind: 'native_kimi',
-      stdinText: 'hello from prompt'
+      kind: 'native_kimi'
     })
   })
 

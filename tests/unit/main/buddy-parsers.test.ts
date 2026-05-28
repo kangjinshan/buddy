@@ -102,6 +102,19 @@ describe('buddy actor parsers', () => {
     })
   })
 
+  it('extracts session ID from kimi session.resume_hint meta event', () => {
+    expect(parseActorLine('kimi', JSON.stringify({
+      role: 'meta',
+      type: 'session.resume_hint',
+      session_id: 'session_f811580a-d17e-4e01-b900-92048f4b1455',
+      command: 'kimi -r session_f811580a-d17e-4e01-b900-92048f4b1455',
+      content: 'To resume this session: kimi -r session_f811580a-d17e-4e01-b900-92048f4b1455'
+    }))).toMatchObject({
+      sessionId: 'session_f811580a-d17e-4e01-b900-92048f4b1455',
+      text: undefined
+    })
+  })
+
   it('detects break messages', () => {
     expect(parseBuddyMessage('type=break\nreason=done')).toMatchObject({
       kind: 'break',

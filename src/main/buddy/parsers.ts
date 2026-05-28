@@ -67,9 +67,12 @@ export function parseKimiJsonLine(line: string): ParsedActorLine {
   const json = JSON.parse(line)
   const text = json.role === 'assistant' ? textValue(json.content) : undefined
 
+  const sessionId = stableSessionIdFromEvent('kimi', json)
+    ?? (json.role === 'meta' && json.type === 'session.resume_hint' ? textValue(json.session_id) : undefined)
+
   return {
     text,
-    sessionId: stableSessionIdFromEvent('kimi', json),
+    sessionId,
     rawType: json.type ?? json.role
   }
 }

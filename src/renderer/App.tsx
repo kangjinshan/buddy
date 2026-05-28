@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { FolderOpen } from 'lucide-react'
 import { useHealthCheck, useBootstrap, useTasks, useTaskDetail, useCreateTask, useSendMessage, useStartTask, useInterrupt, useDeleteTask, useEnqueueInstruction, useDequeueInstruction, useClearInstructionQueue, useInterruptAndInsert } from './hooks/useBuddy'
 import { useTheme } from './hooks/useTheme'
-import { useT } from './hooks/useI18n'
+import { useT, useLanguage } from './hooks/useI18n'
 import type { TFunction } from './hooks/useI18n'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import type { ShortcutActions } from './hooks/useKeyboardShortcuts'
@@ -47,6 +47,12 @@ export default function App() {
     const cleanup = window.api.onFullScreenChange(setIsFullScreen)
     return cleanup
   }, [])
+
+  // Sync language to main process for menu i18n
+  const language = useLanguage()
+  useEffect(() => {
+    window.api.updateMenuLanguage(language)
+  }, [language])
 
   const { data: isHealthy, isLoading: isCheckingHealth, error: healthError } = useHealthCheck()
   const { data: bootstrap, isLoading: isLoadingBootstrap, error: bootstrapError } = useBootstrap()
@@ -428,6 +434,15 @@ export default function App() {
         setIsSidebarOpen(prev => !prev)
       } else if (action === 'toggleStatusBar') {
         setIsStatusBarOpen(prev => !prev)
+      } else if (action === 'openDocumentation') {
+        window.open('https://github.com/davidliudev/buddy/tree/main/docs', '_blank')
+      } else if (action === 'openWhatsNew') {
+        window.open('https://github.com/davidliudev/buddy/releases', '_blank')
+      } else if (action === 'sendFeedback') {
+        window.open('https://github.com/davidliudev/buddy/issues/new', '_blank')
+      } else if (action === 'showKeyboardShortcuts') {
+        setView('settings')
+        setSettingsTab('keyboard')
       }
     })
     return cleanup

@@ -209,6 +209,7 @@ describe('BuddyRunner with fake launcher', () => {
       '#!/bin/sh',
       'cat >/dev/null',
       "printf '%s\\n' " + JSON.stringify(JSON.stringify({ role: 'assistant', content: '{"type":"chat","content":"intermediate"}' })),
+      "printf '%s\\n' " + JSON.stringify(JSON.stringify({ role: 'meta', type: 'session.resume_hint', session_id: 'session_abc123-def456', content: 'To resume: kimi -r session_abc123-def456' })),
       "printf '%s\\n' " + JSON.stringify(JSON.stringify({ role: 'assistant', content: '{"type":"chat","content":"final answer"}' }))
     ].join('\n'))
     await chmod(fake, 0o755)
@@ -232,7 +233,7 @@ describe('BuddyRunner with fake launcher', () => {
     })
 
     const detail = await store.getTaskDetail('demo', created.workspace_key)
-    expect(detail.state.kimi_session_id).toMatch(/^[a-f0-9]{16}$/)
+    expect(detail.state.kimi_session_id).toBe('session_abc123-def456')
     expect(detail.transcript).toEqual(expect.arrayContaining([
       expect.objectContaining({ role: 'kimi', content: 'final answer' })
     ]))

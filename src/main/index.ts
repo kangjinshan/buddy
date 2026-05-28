@@ -4,7 +4,7 @@ import { registerBuddyHandlers } from './ipc/buddy-handlers'
 import { BuddyCoreService } from './buddy/service'
 import { BuddyEventBus } from './buddy/events'
 import { fixShellPath } from './buddy/shell-path'
-import { setupMenu } from './menu'
+import { setupMenu, updateMenuLanguage } from './menu'
 import { mkdir, writeFile, stat, readFile, realpath } from 'node:fs/promises'
 import { join } from 'node:path'
 import { randomUUID } from 'node:crypto'
@@ -43,6 +43,10 @@ app.whenReady().then(async () => {
 
   ipcMain.handle('window:isFullScreen', () => {
     return windowManager.getMainWindow()?.isFullScreen() ?? false
+  })
+
+  ipcMain.on('menu:updateLanguage', (_event, lang: string) => {
+    updateMenuLanguage(lang)
   })
 
   ipcMain.handle('shell:openInFinder', async (_event, path: string) => {

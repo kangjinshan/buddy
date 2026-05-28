@@ -18,6 +18,9 @@ const api = {
   },
   isFullScreen: (): Promise<boolean> =>
     ipcRenderer.invoke('window:isFullScreen'),
+  updateMenuLanguage: (lang: string): void => {
+    ipcRenderer.send('menu:updateLanguage', lang)
+  },
   readClipboardFilePaths: (): Promise<Array<{ path: string; size: number }>> =>
     ipcRenderer.invoke('clipboard:readFilePaths'),
   saveAttachmentBuffer: (taskId: string, workspaceKey: string, name: string, bufferBase64: string): Promise<string> =>

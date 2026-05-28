@@ -150,7 +150,7 @@ const en = {
   'settings.launcher.claude.hint': 'Launch command for Claude Code. As implementer, --dangerously-skip-permissions is recommended.',
   'settings.launcher.codex.hint': 'Launch command for Codex. The launcher automatically uses non-interactive exec --dangerously-bypass-approvals-and-sandbox.',
   'settings.launcher.opencode.hint': 'Launch command for OpenCode. The launcher uses run --format json --dangerously-skip-permissions in non-interactive mode.',
-  'settings.launcher.kimi.hint': 'Launch command for Kimi CLI. The launcher uses --print --output-format stream-json --input-format text in non-interactive mode (--print implies --afk).',
+  'settings.launcher.kimi.hint': 'Launch command for Kimi CLI. The launcher uses --print --output-format stream-json --input-format text in non-interactive mode (--print implies --afk). Session resumption uses -r <session-id>.',
 
   'settings.collab.title': 'Default collaboration',
   'settings.collab.desc': 'Default values used when creating a task',
@@ -442,7 +442,7 @@ const zhCN: typeof en = {
   'settings.launcher.claude.hint': 'Claude Code 的启动命令。作为执行者时推荐使用 --dangerously-skip-permissions。',
   'settings.launcher.codex.hint': 'Codex 的启动命令。launcher 会自动使用 exec --dangerously-bypass-approvals-and-sandbox 非交互模式执行。',
   'settings.launcher.opencode.hint': 'OpenCode 的启动命令。launcher 会自动使用 run --format json --dangerously-skip-permissions 非交互模式执行。',
-  'settings.launcher.kimi.hint': 'Kimi CLI 的启动命令。launcher 会自动使用 --print --output-format stream-json --input-format text 非交互模式执行（--print 隐式启用 --afk 自动批准）。',
+  'settings.launcher.kimi.hint': 'Kimi CLI 的启动命令。launcher 会自动使用 --print --output-format stream-json --input-format text 非交互模式执行（--print 隐式启用 --afk 自动批准）。会话恢复使用 -r <session-id>。',
 
   'settings.collab.title': '默认协作参数',
   'settings.collab.desc': '新建任务时使用的默认参数',
@@ -723,7 +723,7 @@ const zhTW: typeof en = {
   'settings.launcher.claude.hint': 'Claude Code 的啟動指令。作為執行者時建議使用 --dangerously-skip-permissions。',
   'settings.launcher.codex.hint': 'Codex 的啟動指令。launcher 會自動使用 exec --dangerously-bypass-approvals-and-sandbox 非互動模式執行。',
   'settings.launcher.opencode.hint': 'OpenCode 的啟動指令。launcher 會自動使用 run --format json --dangerously-skip-permissions 非互動模式執行。',
-  'settings.launcher.kimi.hint': 'Kimi CLI 的啟動指令。launcher 會自動使用 --print --output-format stream-json --input-format text 非互動模式執行（--print 隱含啟用 --afk 自動核可）。',
+  'settings.launcher.kimi.hint': 'Kimi CLI 的啟動指令。launcher 會自動使用 --print --output-format stream-json --input-format text 非互動模式執行（--print 隱含啟用 --afk 自動核可）。工作階段恢復使用 -r <session-id>。',
 
   'settings.collab.title': '預設協作參數',
   'settings.collab.desc': '新增任務時使用的預設參數',
