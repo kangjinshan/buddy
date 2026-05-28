@@ -76,7 +76,7 @@ echo ">> Building..."
 pnpm build
 pnpm clean:release
 CUSTOM_DMGBUILD_PATH="$(sh scripts/prepare-dmgbuild.sh)" \
-  CSC_IDENTITY_AUTO_DISCOVERY=false \
+  CSC_NAME="Apple Development: coolbor@gmail.com (LL5Q233Q8L)" \
   pnpm exec electron-builder --mac --publish never -c.mac.notarize=false
 echo "   Build complete ✓"
 
