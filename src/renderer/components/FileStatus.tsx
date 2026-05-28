@@ -149,9 +149,9 @@ export function CommitModal({ gitStatus, repoRoot, onClose, onSuccess, onError }
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [onClose])
 
-  const totalInsertions = (gitStatus?.diff?.insertions ?? 0) + (gitStatus?.staged?.insertions ?? 0)
-  const totalDeletions = (gitStatus?.diff?.deletions ?? 0) + (gitStatus?.staged?.deletions ?? 0)
-  const totalFiles = (gitStatus?.diff?.filesChanged ?? 0) + (gitStatus?.staged?.filesChanged ?? 0) + (gitStatus?.untracked ?? 0)
+  const totalInsertions = gitStatus?.files.reduce((s, f) => s + f.insertions, 0) ?? 0
+  const totalDeletions = gitStatus?.files.reduce((s, f) => s + f.deletions, 0) ?? 0
+  const totalFiles = gitStatus?.files.length ?? 0
   const hasUnstaged = (gitStatus?.diff?.filesChanged ?? 0) > 0 || (gitStatus?.untracked ?? 0) > 0
   const hasStaged = (gitStatus?.staged?.filesChanged ?? 0) > 0
 
@@ -295,7 +295,8 @@ export function CommitModal({ gitStatus, repoRoot, onClose, onSuccess, onError }
                     <tr className="bg-bg-subtle text-fg-secondary">
                       <th className="px-3 py-1.5 text-left font-medium w-20">{t('git.statusColumn')}</th>
                       <th className="px-3 py-1.5 text-left font-medium">{t('git.fileColumn')}</th>
-                      <th className="px-3 py-1.5 text-right font-medium w-24">+/-</th>
+                      <th className="px-2 py-1.5 text-right font-medium w-12">+</th>
+                      <th className="px-2 py-1.5 text-right font-medium w-12">-</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -304,14 +305,14 @@ export function CommitModal({ gitStatus, repoRoot, onClose, onSuccess, onError }
                         <td className="px-3 py-1.5">
                           <FileStatusBadge status={f.status} t={t} />
                         </td>
-                        <td className="px-3 py-1.5 font-mono text-fg-secondary truncate max-w-[340px]" title={f.path}>
+                        <td className="px-3 py-1.5 font-mono text-fg-secondary truncate max-w-[320px]" title={f.path}>
                           {f.path}
                         </td>
-                        <td className="px-3 py-1.5 text-right font-mono">
-                          <span className="inline-grid grid-cols-[auto_auto] gap-x-1.5">
-                            <span className="text-right text-success-fg">{f.insertions > 0 ? `+${f.insertions}` : ''}</span>
-                            <span className="text-right text-danger">{f.deletions > 0 ? `-${f.deletions}` : ''}</span>
-                          </span>
+                        <td className="px-2 py-1.5 text-right font-mono text-success-fg">
+                          {f.insertions > 0 ? `+${f.insertions}` : ''}
+                        </td>
+                        <td className="px-2 py-1.5 text-right font-mono text-danger">
+                          {f.deletions > 0 ? `-${f.deletions}` : ''}
                         </td>
                       </tr>
                     ))}

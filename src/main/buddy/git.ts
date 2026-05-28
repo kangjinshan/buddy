@@ -55,7 +55,7 @@ export async function getGitBranch(cwd: string): Promise<string> {
 
 export async function getGitDiffStats(cwd: string): Promise<GitDiffStats | null> {
   try {
-    const output = await execGit(['diff', '--numstat'], cwd)
+    const output = await execGit(['diff', '--numstat', '--no-renames'], cwd)
     return parseDiffStat(output)
   } catch {
     return null
@@ -64,7 +64,7 @@ export async function getGitDiffStats(cwd: string): Promise<GitDiffStats | null>
 
 export async function getGitStagedStats(cwd: string): Promise<GitDiffStats | null> {
   try {
-    const output = await execGit(['diff', '--cached', '--numstat'], cwd)
+    const output = await execGit(['diff', '--cached', '--numstat', '--no-renames'], cwd)
     return parseDiffStat(output)
   } catch {
     return null
