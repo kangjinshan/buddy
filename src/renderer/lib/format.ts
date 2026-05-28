@@ -272,3 +272,31 @@ export function formatTime(value: string | undefined | null, lang?: Language): s
     second: '2-digit'
   })
 }
+
+export function formatTimeWithRelativeDate(value: string | undefined | null, lang?: Language): string {
+  if (!value) return '-'
+  const date = new Date(value)
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const target = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+  const diffDays = Math.floor((today.getTime() - target.getTime()) / (24 * 60 * 60 * 1000))
+
+  const time = date.toLocaleTimeString(lang ? localeTagFor(lang) : undefined, {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  })
+
+  if (diffDays <= 0) return time
+
+  const relLabel =
+    diffDays === 1 ? translate(lang ?? 'en', 'time.yesterday')
+    : diffDays === 2 ? translate(lang ?? 'en', 'time.twoDaysAgo')
+    : diffDays === 3 ? translate(lang ?? 'en', 'time.threeDaysAgo')
+    : diffDays <= 6 ? translate(lang ?? 'en', 'time.daysAgo', { n: diffDays })
+    : diffDays <= 13 ? translate(lang ?? 'en', 'time.lastWeek')
+    : time
+
+  if (typeof relLabel === 'string' && relLabel !== time) return `${relLabel} ${time}`
+  return time
+}

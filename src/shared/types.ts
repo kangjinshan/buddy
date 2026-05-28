@@ -203,11 +203,21 @@ export interface CountdownInput {
   workspace_key?: string
 }
 
+export type GitFileStatusCode = 'M' | 'A' | 'D' | 'R' | 'C' | 'U' | '?'
+
+export interface GitFileStatus {
+  path: string
+  status: GitFileStatusCode
+  insertions: number
+  deletions: number
+}
+
 export interface GitDiffStats {
   filesChanged: number
   insertions: number
   deletions: number
   summary: string
+  files?: GitFileStatus[]
 }
 
 export interface GitRemote {
@@ -220,5 +230,6 @@ export interface GitStatusResult {
   diff: GitDiffStats | null
   staged: GitDiffStats | null
   untracked: number
+  files: GitFileStatus[]
   remotes: GitRemote[]
 }

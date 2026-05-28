@@ -9,7 +9,7 @@ import {
   ACTOR_LABEL_KEY,
   Actor,
   taskActors,
-  formatTime,
+  formatTimeWithRelativeDate,
   decodeErrorText,
   eventPayloadSummary,
   eventTypeLabel
@@ -95,7 +95,7 @@ export function StatusBar({
     : t('statusBar.roundDash')
 
   const updatedText = taskState?.updated_at
-    ? formatTime(taskState.updated_at, lang)
+    ? formatTimeWithRelativeDate(taskState.updated_at, lang)
     : t('statusBar.updatedWaiting')
 
   return (
@@ -255,7 +255,7 @@ function FailureDetail({
   if (status !== 'FAILED' || !failure?.message) return null
   const failureSnippet = truncate(decodeErrorText(failure.message), 240)
   const failureActor = failure.actor ? actorLabel(failure.actor, t) : ''
-  const failureWhen = failure.ts ? formatTime(failure.ts, lang) : ''
+  const failureWhen = failure.ts ? formatTimeWithRelativeDate(failure.ts, lang) : ''
   return (
     <div className="mb-3 rounded-lg border border-danger bg-bg-subtle px-3 py-2 text-xs text-fg-secondary">
       {(failureActor || failureWhen) && (
@@ -346,7 +346,7 @@ function EventLog({ events, t, lang }: { events: Event[]; t: TFunction; lang: La
               </span>
               <span className="text-fg-secondary flex-shrink-0">
                 {event.actor ? `${actorLabel(event.actor, t)} ` : ''}
-                {formatTime(event.ts, lang)}
+                {formatTimeWithRelativeDate(event.ts, lang)}
               </span>
             </div>
             {summary && (

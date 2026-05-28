@@ -1,6 +1,6 @@
 import { TranscriptEntry } from '../../shared/types'
 import { renderMarkdown } from '../lib/markdown'
-import { formatDuration, formatTime, decodeErrorText, unescapeText, ACTOR_LABEL_KEY } from '../lib/format'
+import { formatDuration, formatTimeWithRelativeDate, decodeErrorText, unescapeText, ACTOR_LABEL_KEY } from '../lib/format'
 import { useLanguage, useT } from '../hooks/useI18n'
 
 interface MessageBubbleProps {
@@ -65,6 +65,6 @@ function formatMessageMeta(entry: TranscriptEntry, lang: ReturnType<typeof useLa
     parts.push(roundLabel)
   }
   if (elapsedMs != null) parts.push(formatDuration(elapsedMs))
-  if (entry.ts) parts.push(formatTime(entry.ts, lang))
+  if (entry.ts) parts.push(formatTimeWithRelativeDate(entry.ts, lang))
   return parts.join(' · ')
 }

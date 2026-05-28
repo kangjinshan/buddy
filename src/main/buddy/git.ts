@@ -1,8 +1,8 @@
 import { spawn } from 'node:child_process'
 import { once } from 'node:events'
-import type { GitDiffStats, GitRemote, GitStatusResult } from '../../shared/types'
+import type { GitDiffStats, GitFileStatus, GitFileStatusCode, GitRemote, GitStatusResult } from '../../shared/types'
 
-export type { GitDiffStats, GitRemote, GitStatusResult }
+export type { GitDiffStats, GitFileStatus, GitFileStatusCode, GitRemote, GitStatusResult }
 
 function execGit(args: string[], cwd: string): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -26,19 +26,23 @@ function execGit(args: string[], cwd: string): Promise<string> {
 
 function parseDiffStat(output: string): GitDiffStats | null {
   if (!output) return null
+  const files: GitFileStatus[] = []
   let filesChanged = 0
   let insertions = 0
   let deletions = 0
   for (const line of output.split('\n')) {
-    const m = line.match(/^(\d+)\s+(\d+)\s+/)
+    const m = line.match(/^(\d+)\s+(\d+)\s+(.+)$/)
     if (m) {
       filesChanged++
-      insertions += parseInt(m[1], 10)
-      deletions += parseInt(m[2], 10)
+      const ins = parseInt(m[1], 10)
+      const del = parseInt(m[2], 10)
+      insertions += ins
+      deletions += del
+      files.push({ path: m[3].trim(), status: 'M', insertions: ins, deletions: del })
     }
   }
   if (filesChanged === 0) return null
-  return { filesChanged, insertions, deletions, summary: output }
+  return { filesChanged, insertions, deletions, summary: output, files }
 }
 
 export async function getGitBranch(cwd: string): Promise<string> {
@@ -95,15 +99,64 @@ export async function getGitUntrackedCount(cwd: string): Promise<number> {
   }
 }
 
+function normalizeStatusCode(xy: string): GitFileStatusCode {
+  const x = xy[0]
+  const y = xy[1]
+  if (x === '?' || y === '?') return '?'
+  if (x === 'A' || y === 'A') return 'A'
+  if (x === 'D' || y === 'D') return 'D'
+  if (x === 'R' || y === 'R') return 'R'
+  if (x === 'C' || y === 'C') return 'C'
+  return 'M'
+}
+
+export async function getGitFileStatuses(cwd: string): Promise<GitFileStatus[]> {
+  try {
+    const output = await execGit(['status', '--short', '--no-renames'], cwd)
+    if (!output.trim()) return []
+    const result: GitFileStatus[] = []
+    for (const line of output.split('\n')) {
+      if (!line.trim()) continue
+      const xy = line.slice(0, 2)
+      const filePath = line.slice(3).trim()
+      if (!filePath) continue
+      result.push({ path: filePath, status: normalizeStatusCode(xy), insertions: 0, deletions: 0 })
+    }
+    return result
+  } catch {
+    return []
+  }
+}
+
+function mergeFileStatuses(fileStatuses: GitFileStatus[], diffFiles: GitFileStatus[] | undefined, stagedFiles: GitFileStatus[] | undefined): GitFileStatus[] {
+  const insertionsByPath = new Map<string, { insertions: number; deletions: number }>()
+  for (const f of [...(diffFiles ?? []), ...(stagedFiles ?? [])]) {
+    const existing = insertionsByPath.get(f.path)
+    if (existing) {
+      existing.insertions += f.insertions
+      existing.deletions += f.deletions
+    } else {
+      insertionsByPath.set(f.path, { insertions: f.insertions, deletions: f.deletions })
+    }
+  }
+  return fileStatuses.map(f => {
+    const stats = insertionsByPath.get(f.path)
+    if (stats) return { ...f, insertions: stats.insertions, deletions: stats.deletions }
+    return f
+  })
+}
+
 export async function getGitStatus(cwd: string): Promise<GitStatusResult> {
-  const [branch, diff, staged, untracked, remotes] = await Promise.all([
+  const [branch, diff, staged, untracked, remotes, files] = await Promise.all([
     getGitBranch(cwd),
     getGitDiffStats(cwd),
     getGitStagedStats(cwd),
     getGitUntrackedCount(cwd),
-    getGitRemotes(cwd)
+    getGitRemotes(cwd),
+    getGitFileStatuses(cwd)
   ])
-  return { branch, diff, staged, untracked, remotes }
+  const mergedFiles = mergeFileStatuses(files, diff?.files, staged?.files)
+  return { branch, diff, staged, untracked, remotes, files: mergedFiles }
 }
 
 export async function gitStageAll(cwd: string): Promise<void> {

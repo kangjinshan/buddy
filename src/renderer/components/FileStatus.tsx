@@ -1,8 +1,8 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { GitBranch, GitCommit, FileDiff, FileText, Loader2, Plus, Minus, Sparkles, Upload } from 'lucide-react'
-import type { GitStatusResult, GitRemote } from '../../shared/types'
+import type { GitStatusResult, GitFileStatusCode, GitRemote } from '../../shared/types'
 import { useGitStageAll, useGitCommitAndPush } from '../hooks/useBuddy'
-import { useT } from '../hooks/useI18n'
+import { useT, type TFunction } from '../hooks/useI18n'
 import { useLanguage } from '../hooks/useI18n'
 import { api } from '../lib/api'
 
@@ -11,6 +11,20 @@ interface FileStatusProps {
   isLoading: boolean
   repoRoot: string | null
   onOpenCommit: () => void
+}
+
+function FileStatusBadge({ status, t }: { status: GitFileStatusCode; t: TFunction }) {
+  const config: Record<GitFileStatusCode, { label: string; cls: string }> = {
+    M: { label: t('git.statusModified'), cls: 'bg-amber-500/15 text-amber-600 dark:text-amber-400' },
+    A: { label: t('git.statusAdded'), cls: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' },
+    D: { label: t('git.statusDeleted'), cls: 'bg-red-500/15 text-red-600 dark:text-red-400' },
+    R: { label: t('git.statusRenamed'), cls: 'bg-blue-500/15 text-blue-600 dark:text-blue-400' },
+    C: { label: t('git.statusCopied'), cls: 'bg-purple-500/15 text-purple-600 dark:text-purple-400' },
+    U: { label: t('git.statusUnmerged'), cls: 'bg-orange-500/15 text-orange-600 dark:text-orange-400' },
+    '?': { label: t('git.statusUntracked'), cls: 'bg-gray-500/15 text-gray-600 dark:text-gray-400' },
+  }
+  const { label, cls } = config[status]
+  return <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-medium leading-none ${cls}`}>{label}</span>
 }
 
 export function FileStatus({ gitStatus, isLoading, repoRoot, onOpenCommit }: FileStatusProps) {
@@ -227,7 +241,7 @@ export function CommitModal({ gitStatus, repoRoot, onClose, onSuccess, onError }
       }}
     >
       <div
-        className="bg-bg-elevated rounded-xl shadow-xl w-[480px] max-h-[80vh] flex flex-col"
+        className="bg-bg-elevated rounded-xl shadow-xl w-[640px] max-h-[85vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
         tabIndex={-1}
       >
@@ -272,11 +286,39 @@ export function CommitModal({ gitStatus, repoRoot, onClose, onSuccess, onError }
             )}
           </div>
 
-          {/* diff 摘要 */}
-          {(gitStatus?.diff?.summary || gitStatus?.staged?.summary) && (
-            <pre className="text-xs text-fg-secondary bg-bg-subtle rounded-lg p-3 max-h-32 overflow-y-auto whitespace-pre-wrap break-words font-mono">
-              {gitStatus?.staged?.summary || gitStatus?.diff?.summary}
-            </pre>
+          {/* 文件列表 */}
+          {gitStatus && gitStatus.files.length > 0 && (
+            <div className="border border-border rounded-lg overflow-hidden">
+              <div className="max-h-52 overflow-y-auto">
+                <table className="w-full text-xs">
+                  <thead className="sticky top-0">
+                    <tr className="bg-bg-subtle text-fg-secondary">
+                      <th className="px-3 py-1.5 text-left font-medium w-20">{t('git.statusColumn')}</th>
+                      <th className="px-3 py-1.5 text-left font-medium">{t('git.fileColumn')}</th>
+                      <th className="px-3 py-1.5 text-right font-medium w-24">+/-</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {gitStatus.files.map((f) => (
+                      <tr key={f.path} className="border-t border-border hover:bg-bg-subtle transition-colors">
+                        <td className="px-3 py-1.5">
+                          <FileStatusBadge status={f.status} t={t} />
+                        </td>
+                        <td className="px-3 py-1.5 font-mono text-fg-secondary truncate max-w-[340px]" title={f.path}>
+                          {f.path}
+                        </td>
+                        <td className="px-3 py-1.5 text-right font-mono">
+                          <span className="inline-grid grid-cols-[auto_auto] gap-x-1.5">
+                            <span className="text-right text-success-fg">{f.insertions > 0 ? `+${f.insertions}` : ''}</span>
+                            <span className="text-right text-danger">{f.deletions > 0 ? `-${f.deletions}` : ''}</span>
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           )}
 
           {/* 远端选择 */}

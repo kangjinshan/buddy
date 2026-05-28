@@ -63,6 +63,11 @@ const en = {
   'time.day': '{n}d',
   'time.month': '{n}mo',
   'time.year': '{n}y',
+  'time.yesterday': 'Yesterday',
+  'time.twoDaysAgo': '2 days ago',
+  'time.threeDaysAgo': '3 days ago',
+  'time.daysAgo': '{n} days ago',
+  'time.lastWeek': 'Last week',
 
   // Actor labels
   'actor.claude': 'Claude',
@@ -258,6 +263,15 @@ const en = {
   'git.commitOnlySuccess': 'Committed ({hash})',
   'git.commitFailed': 'Commit failed: {message}',
   'git.noRepo': 'Not a git repo',
+  'git.statusAdded': 'Added',
+  'git.statusModified': 'Modified',
+  'git.statusDeleted': 'Deleted',
+  'git.statusRenamed': 'Renamed',
+  'git.statusCopied': 'Copied',
+  'git.statusUntracked': 'Untracked',
+  'git.statusUnmerged': 'Unmerged',
+  'git.statusColumn': 'Status',
+  'git.fileColumn': 'File',
 
   // Event types
   'event.task.created': 'Created',
@@ -341,6 +355,11 @@ const zhCN: typeof en = {
   'time.day': '{n}天',
   'time.month': '{n}月',
   'time.year': '{n}年',
+  'time.yesterday': '昨天',
+  'time.twoDaysAgo': '前天',
+  'time.threeDaysAgo': '三天前',
+  'time.daysAgo': '{n}天前',
+  'time.lastWeek': '上周',
 
   'actor.claude': 'Claude',
   'actor.codex': 'Codex',
@@ -522,6 +541,15 @@ const zhCN: typeof en = {
   'git.commitOnlySuccess': '已提交（{hash}）',
   'git.commitFailed': '提交失败：{message}',
   'git.noRepo': '非 git 仓库',
+  'git.statusAdded': '新增',
+  'git.statusModified': '修改',
+  'git.statusDeleted': '删除',
+  'git.statusRenamed': '重命名',
+  'git.statusCopied': '复制',
+  'git.statusUntracked': '未跟踪',
+  'git.statusUnmerged': '未合并',
+  'git.statusColumn': '状态',
+  'git.fileColumn': '文件',
 
   // Event types
   'event.task.created': '已创建',
@@ -603,6 +631,11 @@ const zhTW: typeof en = {
   'time.day': '{n}天',
   'time.month': '{n}月',
   'time.year': '{n}年',
+  'time.yesterday': '昨天',
+  'time.twoDaysAgo': '前天',
+  'time.threeDaysAgo': '三天前',
+  'time.daysAgo': '{n}天前',
+  'time.lastWeek': '上週',
 
   'actor.claude': 'Claude',
   'actor.codex': 'Codex',
@@ -784,6 +817,15 @@ const zhTW: typeof en = {
   'git.commitOnlySuccess': '已提交（{hash}）',
   'git.commitFailed': '提交失敗：{message}',
   'git.noRepo': '非 git 儲存庫',
+  'git.statusAdded': '新增',
+  'git.statusModified': '修改',
+  'git.statusDeleted': '刪除',
+  'git.statusRenamed': '重新命名',
+  'git.statusCopied': '複製',
+  'git.statusUntracked': '未追蹤',
+  'git.statusUnmerged': '未合併',
+  'git.statusColumn': '狀態',
+  'git.fileColumn': '檔案',
 
   // Event types
   'event.task.created': '已建立',
