@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 export type UpdaterEvent =
   | { type: 'checking' }
@@ -15,6 +15,7 @@ export function useUpdater() {
   const [progress, setProgress] = useState({ percent: 0, bytesPerSecond: 0 })
   const [mandatory, setMandatory] = useState(false)
   const [dismissed, setDismissed] = useState(false)
+  const downloaded = useRef(false)
 
   useEffect(() => {
     if (!window.api?.onUpdaterEvent) return
@@ -22,22 +23,24 @@ export function useUpdater() {
       const e = event as UpdaterEvent
       switch (e.type) {
         case 'checking':
-          setStatus('checking')
+          if (!downloaded.current) setStatus('checking')
           break
         case 'available':
+          downloaded.current = false
           setStatus('available')
           setVersion(e.info.version)
           setMandatory(e.info.mandatory ?? false)
           setDismissed(false)
           break
         case 'not-available':
-          setStatus('idle')
+          if (!downloaded.current) setStatus('idle')
           break
         case 'progress':
           setStatus('downloading')
           setProgress({ percent: e.progress.percent, bytesPerSecond: e.progress.bytesPerSecond })
           break
         case 'downloaded':
+          downloaded.current = true
           setStatus('downloaded')
           setVersion(e.info.version)
           setDismissed(false)
