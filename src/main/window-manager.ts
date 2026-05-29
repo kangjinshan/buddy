@@ -29,6 +29,16 @@ export class WindowManager {
       return { action: 'deny' }
     })
 
+    // Intercept in-app navigation (e.g. <a> tag clicks) and open in system browser
+    this.mainWindow.webContents.on('will-navigate', (event, url) => {
+      const isLocal = url.startsWith('file://') ||
+        (is.dev && url.startsWith(process.env['ELECTRON_RENDERER_URL'] ?? ''))
+      if (!isLocal) {
+        event.preventDefault()
+        shell.openExternal(url)
+      }
+    })
+
     if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
       this.mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
     } else {

@@ -6,6 +6,8 @@ const api = {
     ipcRenderer.invoke('dialog:selectDirectory', defaultPath),
   openInFinder: (path: string): Promise<void> =>
     ipcRenderer.invoke('shell:openInFinder', path),
+  openExternal: (url: string): Promise<void> =>
+    ipcRenderer.invoke('shell:openExternal', url),
   onFullScreenChange: (callback: (isFullScreen: boolean) => void): (() => void) => {
     const handler = (_event: Electron.IpcRendererEvent, isFullScreen: boolean) => callback(isFullScreen)
     ipcRenderer.on('window:fullScreenChange', handler)

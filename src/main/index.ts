@@ -72,6 +72,10 @@ app.whenReady().then(async () => {
     await shell.openPath(path)
   })
 
+  ipcMain.handle('shell:openExternal', async (_event, url: string) => {
+    await shell.openExternal(url)
+  })
+
   ipcMain.handle('clipboard:readFilePaths', async () => {
     if (process.platform !== 'darwin') return []
     try {
