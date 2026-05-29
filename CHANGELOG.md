@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.6] - 2026-05-29
+
+### Fixed
+
+- 修复自动更新下载完成后，状态被 checking/not-available 事件回退的问题
+- 修复窗口销毁后菜单操作和更新器推送事件导致崩溃的问题
+
+### Changed
+
+- 更新器错误事件改为 not-available，简化状态机
+- 侧边栏品牌文字布局修复，防止更新按钮挤压
+- 发布脚本支持部署固定名称的最新安装包（buddy-arm64.dmg / buddy-x64.dmg）
+
+---
+
 ## [1.0.5] - 2026-05-29
 
 ### Changed
@@ -133,6 +148,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - 项目需求文档 (REQUIREMENTS.md)
 - 项目结构初始化
 
+[1.0.6]: https://gitlab.weibo.cn/ailab/buddy-macos/-/tags/v1.0.6
 [1.0.5]: https://gitlab.weibo.cn/ailab/buddy-macos/-/tags/v1.0.5
 [1.0.4]: https://gitlab.weibo.cn/ailab/buddy-macos/-/tags/v1.0.4
 [1.0.3]: https://gitlab.weibo.cn/ailab/buddy-macos/-/tags/v1.0.3
