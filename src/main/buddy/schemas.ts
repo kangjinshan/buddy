@@ -6,6 +6,7 @@ const taskStatusSchema = z.enum([
   'RUNNING_CODEX',
   'RUNNING_OPENCODE',
   'RUNNING_KIMI',
+  'PINGING',
   'COUNTDOWN',
   'PAUSED',
   'FAILED',
@@ -53,6 +54,12 @@ const instructionQueueItemSchema = z.object({
   attachments: z.array(attachmentMetaSchema).optional()
 })
 
+const healthCheckResultSchema = z.object({
+  actors: z.record(z.string(), z.enum(['pending', 'running', 'passed', 'failed'])),
+  failed_actor: z.string().optional(),
+  failed_reason: z.string().optional()
+})
+
 export const taskStateSchema = z.object({
   protocol_version: z.string().optional(),
   task_id: z.string().optional(),
@@ -77,7 +84,8 @@ export const taskStateSchema = z.object({
   created_at: z.string().optional(),
   updated_at: z.string().optional(),
   pending_break: z.object({ actor: z.string().optional(), round: z.number().optional() }).nullable().optional(),
-  latest_failure: failureSchema.nullable().optional()
+  latest_failure: failureSchema.nullable().optional(),
+  health_check: healthCheckResultSchema.nullable().optional()
 })
 
 export const launcherSchema = z.object({

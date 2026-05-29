@@ -134,9 +134,11 @@ export function MessageBubble({ entry }: MessageBubbleProps) {
   const isHuman = entry.role === 'human'
   const meta = entry.meta || ({} as Record<string, unknown>)
   const isRoundNotice = isSystem && meta.kind === 'round_notice'
+  const isHealthCheck = isSystem && (meta.kind === 'health_check' || meta.kind === 'health_check_failed')
+  const isHealthCheckFailed = isSystem && meta.kind === 'health_check_failed'
   const metaAttachments = (meta.attachments as AttachmentMeta[] | undefined)
 
-  let bodyText = isSystem && !isRoundNotice ? decodeErrorText(entry.content) : unescapeText(entry.content)
+  let bodyText = isSystem && !isRoundNotice && !isHealthCheck ? decodeErrorText(entry.content) : unescapeText(entry.content)
 
   // Resolve attachments: prefer meta.attachments, fall back to parsing from content
   let displayAttachments = metaAttachments
@@ -152,15 +154,17 @@ export function MessageBubble({ entry }: MessageBubbleProps) {
   const cls = roleClasses[entry.role] || 'msg-default'
   const metaText = formatMessageMeta(entry, lang)
 
-  const roleLabel = isRoundNotice
+  const roleLabel = isRoundNotice || isHealthCheck
     ? t('actor.systemNotice')
     : ACTOR_LABEL_KEY[entry.role]
       ? t(ACTOR_LABEL_KEY[entry.role])
       : entry.role
 
+  const noticeClass = isRoundNotice ? 'round-notice' : isHealthCheckFailed ? 'health-check-failed' : isHealthCheck ? 'health-check' : ''
+
   return (
     <div className={`flex mb-3 ${isHuman ? 'justify-end' : 'justify-start'}`}>
-      <div className={`message ${cls} ${isRoundNotice ? 'round-notice' : ''} ${isHuman ? 'min-w-[66.666667%] max-w-[82%]' : 'w-full'}`}>
+      <div className={`message ${cls} ${noticeClass} ${isHuman ? 'min-w-[66.666667%] max-w-[82%]' : 'w-full'}`}>
         <div className="message-head">
           <span className="role">{roleLabel}</span>
           {metaText && <span>{metaText}</span>}
@@ -183,7 +187,8 @@ function formatMessageMeta(entry: TranscriptEntry, lang: ReturnType<typeof useLa
   const round = meta.round as number | undefined
   const elapsedMs = meta.elapsed_ms as number | null | undefined
   const isRoundNotice = entry.role === 'system' && meta.kind === 'round_notice'
-  if (round && !isRoundNotice) {
+  const isHealthCheck = entry.role === 'system' && (meta.kind === 'health_check' || meta.kind === 'health_check_failed')
+  if (round && !isRoundNotice && !isHealthCheck) {
     const roundLabel =
       lang === 'en' ? `Round ${round}`
         : lang === 'zh-TW' ? `第 ${round} 輪`

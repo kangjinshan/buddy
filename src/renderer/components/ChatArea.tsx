@@ -36,7 +36,8 @@ export function ChatArea({ task, hasAnyTasks, onSendMessage, onStartTask, onInte
   const [detailExpanded, setDetailExpanded] = useState(false)
   const userScrolledUp = useRef(false)
 
-  const isRunning = task?.state?.status?.startsWith('RUNNING_') ?? false
+  const status = task?.state?.status
+  const isRunning = status?.startsWith('RUNNING_') || status === 'PINGING' || false
   const activeRunId = isRunning ? task?.state?.active_run?.run_id : null
   const activeActor = isRunning ? task?.state?.active_run?.actor : null
   const streamLines = useActorStream(task?.task_id ?? null, activeRunId ?? null)

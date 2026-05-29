@@ -42,7 +42,12 @@ const EVENT_TYPE_KEY: Record<string, TranslationKey> = {
   'actor.failed': 'event.actor.failed',
   'actor.interrupted': 'event.actor.interrupted',
   'actor.stderr': 'event.actor.stderr',
-  'permission.detected': 'event.permission.detected'
+  'permission.detected': 'event.permission.detected',
+  'health_check.started': 'health_check.started',
+  'health_check.actor_passed': 'health_check.actorPassed',
+  'health_check.actor_failed': 'health_check.actorFailed',
+  'health_check.passed': 'health_check.allPassed',
+  'health_check.failed': 'health_check.failed'
 }
 
 export function eventTypeLabel(type: string, lang: Language): string {

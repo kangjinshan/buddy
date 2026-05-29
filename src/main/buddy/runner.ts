@@ -14,7 +14,7 @@ import type {
 import { buildLauncherCommand, commandKindFor, runLauncher, type LauncherCommandKind } from './launchers'
 import { createRunLock, removeRunLock } from './locks'
 import { extractActorOutput, parseActorEvents, parseActorLine, parseBuddyMessage, ParsedActorLine } from './parsers'
-import { buildActorPrompt, hashText, nextActor as nextActorForSettings } from './prompts'
+import { buildActorPrompt, buildPingPrompt, hashText, nextActor as nextActorForSettings, implementerActor as resolveImplementerActor, actorDisplayName } from './prompts'
 import { BuddyStore } from './store'
 import { BuddyEventBus } from './events'
 
@@ -24,6 +24,8 @@ const ACTOR_STATUS: Record<string, TaskState['status']> = {
   opencode: 'RUNNING_OPENCODE',
   kimi: 'RUNNING_KIMI'
 }
+
+const PING_TIMEOUT_SECONDS = 30
 
 interface RunnerOptions {
   executeLaunchers?: boolean
@@ -46,6 +48,16 @@ export class BuddyRunner {
     if (!input.workspace_key) throw new Error('workspace_key is required')
     const workspaceKey = input.workspace_key
     const detail = await this.store.getTaskDetail(taskId, workspaceKey)
+
+    // Health check: on first start (round 0, no sessions, no prior health check), ping both actors.
+    // Skip when an explicit actor is requested (caller knows what they want) or in test mode.
+    if (this.executeLaunchers && !input.actor && needsHealthCheck(detail.state, detail.settings)) {
+      const implementer = resolveImplementerActor(detail.settings)
+      const reviewer = nextActorForSettings(implementer, detail.settings)
+      const healthRunId = await this.runHealthCheck(taskId, workspaceKey, implementer, reviewer)
+      return { run_id: healthRunId }
+    }
+
     const globalSettings = await this.store.readGlobalSettings()
     const actor = input.actor
       ?? (detail.state.status === 'FAILED' ? (detail.state.latest_failure?.actor ?? detail.state.last_error?.actor) : undefined)
@@ -229,6 +241,221 @@ export class BuddyRunner {
 
   async clearInstructionQueue(taskId: string, workspaceKey: string): Promise<void> {
     return this.store.clearInstructionQueue(taskId, workspaceKey)
+  }
+
+  private async executePing(
+    taskId: string,
+    workspaceKey: string,
+    actor: string
+  ): Promise<{ success: boolean; sessionId?: string; error?: string }> {
+    const detail = await this.store.getTaskDetail(taskId, workspaceKey)
+    const launcher = detail.settings.launchers[actor] ?? {
+      command: actor,
+      env: {},
+      timeout_seconds: PING_TIMEOUT_SECONDS
+    }
+    const taskDirectory = this.store.taskDirectory(taskId, workspaceKey)
+    const artifactsDir = join(taskDirectory, 'artifacts')
+    await mkdir(artifactsDir, { recursive: true })
+
+    const runId = `ping_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`
+    const prompt = buildPingPrompt(actor)
+    const promptFile = join(artifactsDir, `${runId}-prompt.md`)
+    const outputFile = join(artifactsDir, `${runId}-output.md`)
+    const eventFile = join(artifactsDir, `${runId}-events.jsonl`)
+    await writeFile(promptFile, prompt)
+
+    const cwd = await existingCwd(detail.state.repo_root)
+    const commandKind = commandKindFor(actor, launcher.command)
+    const command = buildLauncherCommand({
+      actor,
+      command: launcher.command,
+      mode: 'start',
+      promptFile,
+      promptText: prompt,
+      eventFile,
+      outputFile,
+      repoRoot: cwd,
+      taskDir: taskDirectory,
+      runId
+    })
+
+    const outputLines: string[] = []
+    const stderrLines: string[] = []
+
+    try {
+      const result = await runLauncher({
+        command: command.command,
+        args: command.args,
+        cwd,
+        env: { ...launcher.env, ...(command.env ?? {}) },
+        stdinText: command.stdinText,
+        timeoutMs: PING_TIMEOUT_SECONDS * 1000,
+        onStdout: (line) => outputLines.push(line),
+        onStderr: (line) => stderrLines.push(line)
+      })
+
+      const stdoutText = outputLines.join('\n')
+      const rawEvents = await collectRawEvents(eventFile, stdoutText, command.kind)
+      const outputText = await collectOutputText(actor, command.kind, outputFile, stdoutText)
+      const parsedLines = parseActorEvents(actor, rawEvents)
+
+      if (result.exitCode !== 0) {
+        const stderrText = stderrLines.join('\n').trim()
+        const error = stderrText || outputText.trim() || `Actor exited with ${result.exitCode}`
+        return { success: false, error: error.slice(0, 300) }
+      }
+
+      const sessionId = lastValue(parsedLines.map((line) => line.sessionId))
+      return { success: true, sessionId }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      const stderrText = stderrLines.join('\n').trim()
+      return { success: false, error: (stderrText || message).slice(0, 300) }
+    }
+  }
+
+  private async runHealthCheck(
+    taskId: string,
+    workspaceKey: string,
+    implementer: string,
+    reviewer: string
+  ): Promise<string> {
+    const actors = [implementer, reviewer]
+    const actorResults: Record<string, 'pending' | 'running' | 'passed' | 'failed'> = {}
+    for (const a of actors) actorResults[a] = 'pending'
+
+    const now = new Date().toISOString()
+    await this.store.updateTaskState(taskId, workspaceKey, (state) => ({
+      ...state,
+      status: 'PINGING' as const,
+      health_check: { actors: actorResults },
+      updated_at: now
+    }))
+    await this.store.appendTaskEvent(taskId, workspaceKey, {
+      type: 'health_check.started',
+      payload: { actors }
+    })
+    await this.store.appendTranscript(
+      taskId,
+      workspaceKey,
+      'system',
+      `正在检查 ${actors.map((a) => actorDisplayName(a)).join(' 和 ')} 的连通性...`,
+      { kind: 'health_check' }
+    )
+
+    const runningResults = { ...actorResults }
+    for (const a of actors) runningResults[a] = 'running'
+    await this.store.updateTaskState(taskId, workspaceKey, (state) => ({
+      ...state,
+      health_check: { actors: runningResults },
+      updated_at: new Date().toISOString()
+    }))
+
+    const pingResults = await Promise.allSettled(
+      actors.map((actor) => this.executePing(taskId, workspaceKey, actor))
+    )
+
+    let allPassed = true
+    let failedActor: string | undefined
+    let failedReason: string | undefined
+    const finalResults = { ...runningResults }
+    const sessionUpdates: Partial<TaskState> = {}
+
+    for (let i = 0; i < actors.length; i++) {
+      const actor = actors[i]
+      const settled = pingResults[i]
+      if (settled.status === 'fulfilled' && settled.value.success) {
+        finalResults[actor] = 'passed'
+        const sid = settled.value.sessionId
+        if (actor === 'claude' && sid) sessionUpdates.claude_session_id = sid
+        if (actor === 'codex' && sid) sessionUpdates.codex_thread_id = sid
+        if (actor === 'opencode' && sid) sessionUpdates.opencode_session_id = sid
+        if (actor === 'kimi' && sid) sessionUpdates.kimi_session_id = sid
+        await this.store.appendTaskEvent(taskId, workspaceKey, {
+          type: 'health_check.actor_passed',
+          actor,
+          payload: { session_id: sid ?? null }
+        })
+        await this.store.appendTranscript(
+          taskId,
+          workspaceKey,
+          'system',
+          `${actorDisplayName(actor)} 连通性检查通过${sid ? `，会话 ID: ${sid.slice(0, 12)}...` : ''}`,
+          { kind: 'health_check' }
+        )
+      } else {
+        allPassed = false
+        finalResults[actor] = 'failed'
+        if (!failedActor) {
+          failedActor = actor
+          failedReason = settled.status === 'fulfilled'
+            ? settled.value.error
+            : (settled.reason instanceof Error ? settled.reason.message : String(settled.reason))
+        }
+        await this.store.appendTaskEvent(taskId, workspaceKey, {
+          type: 'health_check.actor_failed',
+          actor,
+          payload: { error: failedReason ?? 'Unknown error' }
+        })
+        await this.store.appendTranscript(
+          taskId,
+          workspaceKey,
+          'system',
+          `${actorDisplayName(actor)} 连通性检查失败：${failedReason ?? '未知错误'}`,
+          { kind: 'health_check_failed' }
+        )
+      }
+    }
+
+    if (allPassed) {
+      await this.store.updateTaskState(taskId, workspaceKey, (state) => ({
+        ...state,
+        status: 'READY',
+        health_check: null,
+        ...sessionUpdates,
+        updated_at: new Date().toISOString()
+      }))
+      await this.store.appendTaskEvent(taskId, workspaceKey, {
+        type: 'health_check.passed',
+        payload: {}
+      })
+      await this.store.appendTranscript(
+        taskId,
+        workspaceKey,
+        'system',
+        '所有 actor 连通性检查通过，开始执行任务。',
+        { kind: 'health_check' }
+      )
+
+      if (this.executeLaunchers) {
+        const runId = `run_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`
+        await this.startTask(taskId, { workspace_key: workspaceKey, actor: implementer })
+        return runId
+      }
+      return `ping_ok_${Date.now()}`
+    } else {
+      await this.store.updateTaskState(taskId, workspaceKey, (state) => ({
+        ...state,
+        status: 'DONE',
+        active_run: null,
+        health_check: { actors: finalResults, failed_actor: failedActor, failed_reason: failedReason },
+        ...sessionUpdates,
+        updated_at: new Date().toISOString()
+      }))
+      await this.store.appendTaskEvent(taskId, workspaceKey, {
+        type: 'health_check.failed',
+        payload: { failed_actor: failedActor, failed_reason: failedReason }
+      })
+      await this.store.appendTranscript(
+        taskId,
+        workspaceKey,
+        'system',
+        `连通性检查失败（${actorDisplayName(failedActor)}：${failedReason ?? '未知错误'}），任务已终止。请检查对应 CLI 是否已安装并可用。`,
+        { kind: 'health_check_failed' }
+      )
+      throw new Error(`连通性检查失败：${actorDisplayName(failedActor)} — ${failedReason ?? '未知错误'}`)
+    }
   }
 
   private async drainAllInstructions(taskId: string, workspaceKey: string): Promise<InstructionQueueItem[]> {
@@ -692,8 +919,21 @@ function canStartFrom(status: TaskState['status']): boolean {
     status === 'PAUSED' ||
     status === 'FAILED' ||
     status === 'COUNTDOWN' ||
-    status === 'DONE'
+    status === 'DONE' ||
+    status === 'PINGING'
   )
+}
+
+function needsHealthCheck(state: TaskState, settings: TaskSettings): boolean {
+  if (state.round > 0) return false
+  if (state.health_check !== null && state.health_check !== undefined) return false
+  const implementer = settings.implementer_actor
+    ?? (settings.role_mode === 'codex_implements' ? 'codex' : 'claude')
+  const reviewer = settings.reviewer_actor
+    ?? (settings.role_mode === 'codex_implements' ? 'claude' : 'codex')
+  const implSession = sessionIdForActor(implementer, state, settings)
+  const revSession = sessionIdForActor(reviewer, state, settings)
+  return !implSession && !revSession
 }
 
 function sessionIdForActor(actor: string, state: TaskState, settings?: Partial<TaskSettings>): string | undefined {
@@ -712,14 +952,6 @@ function stringSetting(settings: Partial<TaskSettings> | undefined, key: keyof T
 function normalizeActorRole(actor: string): TranscriptEntry['role'] {
   if (actor === 'claude' || actor === 'codex' || actor === 'opencode' || actor === 'kimi') return actor
   return 'system'
-}
-
-function actorDisplayName(actor: unknown): string {
-  if (actor === 'claude') return 'Claude Code'
-  if (actor === 'codex') return 'Codex'
-  if (actor === 'opencode') return 'OpenCode'
-  if (actor === 'kimi') return 'Kimi Code'
-  return typeof actor === 'string' && actor ? actor : 'Unknown'
 }
 
 function lastValue(values: Array<string | undefined>): string | undefined {

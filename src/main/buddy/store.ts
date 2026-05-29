@@ -586,7 +586,8 @@ function defaultTaskState(
     consecutive_failures: 0,
     created_at: now,
     updated_at: now,
-    pending_break: null
+    pending_break: null,
+    health_check: null
   }
 }
 

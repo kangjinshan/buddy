@@ -94,6 +94,15 @@ const en = {
   'status.PAUSED': 'Paused',
   'status.FAILED': 'Failed',
   'status.DONE': 'Done',
+  'status.PINGING': 'Health check…',
+
+  // Health check
+  'health_check.started': 'Checking actor connectivity…',
+  'health_check.actorPinging': 'Pinging {actor}…',
+  'health_check.actorPassed': '{actor} is ready',
+  'health_check.actorFailed': '{actor} check failed: {reason}',
+  'health_check.allPassed': 'All actors ready, starting task',
+  'health_check.failed': 'Health check failed, task terminated',
 
   // Sidebar
   'sidebar.collapse': 'Collapse sidebar',
@@ -409,6 +418,14 @@ const zhCN: typeof en = {
   'status.PAUSED': '已暂停',
   'status.FAILED': '失败',
   'status.DONE': '已完成',
+  'status.PINGING': '连通性检查…',
+
+  'health_check.started': '正在检查 actor 连通性…',
+  'health_check.actorPinging': '正在检测 {actor}…',
+  'health_check.actorPassed': '{actor} 就绪',
+  'health_check.actorFailed': '{actor} 检测失败：{reason}',
+  'health_check.allPassed': '所有 actor 就绪，开始执行任务',
+  'health_check.failed': '连通性检查失败，任务已终止',
 
   'sidebar.collapse': '收起侧边栏',
   'sidebar.expand': '展开侧边栏',
@@ -710,6 +727,14 @@ const zhTW: typeof en = {
   'status.PAUSED': '已暫停',
   'status.FAILED': '失敗',
   'status.DONE': '已完成',
+  'status.PINGING': '連通性檢查…',
+
+  'health_check.started': '正在檢查 actor 連通性…',
+  'health_check.actorPinging': '正在偵測 {actor}…',
+  'health_check.actorPassed': '{actor} 就緒',
+  'health_check.actorFailed': '{actor} 偵測失敗：{reason}',
+  'health_check.allPassed': '所有 actor 就緒，開始執行任務',
+  'health_check.failed': '連通性檢查失敗，任務已終止',
 
   'sidebar.collapse': '收合側邊欄',
   'sidebar.expand': '展開側邊欄',

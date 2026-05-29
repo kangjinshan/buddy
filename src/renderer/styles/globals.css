@@ -133,6 +133,32 @@ body {
   color: var(--success-fg);
 }
 
+.message.health-check {
+  border-left-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg-base));
+  font-style: normal;
+}
+.message.health-check .message-body {
+  font-size: 13px;
+  line-height: 1.5;
+}
+.message.health-check .role {
+  color: var(--accent);
+}
+
+.message.health-check-failed {
+  border-left-color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 8%, var(--bg-base));
+  font-style: normal;
+}
+.message.health-check-failed .message-body {
+  font-size: 13px;
+  line-height: 1.5;
+}
+.message.health-check-failed .role {
+  color: var(--danger);
+}
+
 /* ===== Markdown content styles ===== */
 .message-body {
   line-height: 1.6;

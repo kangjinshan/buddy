@@ -29,6 +29,9 @@ function compactStatusInfo(status: TaskStatus | null | undefined): CompactStatus
   if (status.startsWith('RUNNING_')) {
     return { cls: 'running', labelKey: 'titleBar.status.running', pulse: true }
   }
+  if (status === 'PINGING') {
+    return { cls: 'running', labelKey: 'status.PINGING', pulse: true }
+  }
   if (status === 'PAUSED') return { cls: 'paused', labelKey: 'status.PAUSED', pulse: false }
   if (status === 'DONE') return { cls: 'done', labelKey: 'status.DONE', pulse: false }
   if (status === 'FAILED') return { cls: 'danger', labelKey: 'status.FAILED', pulse: false }

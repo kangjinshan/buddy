@@ -14,6 +14,7 @@ export type TaskStatus =
   | 'RUNNING_CODEX'
   | 'RUNNING_OPENCODE'
   | 'RUNNING_KIMI'
+  | 'PINGING'
   | 'COUNTDOWN'
   | 'PAUSED'
   | 'FAILED'
@@ -36,6 +37,12 @@ export interface InstructionQueueItem {
   content: string
   created_at: string
   attachments?: AttachmentMeta[]
+}
+
+export interface HealthCheckResult {
+  actors: Record<string, 'pending' | 'running' | 'passed' | 'failed'>
+  failed_actor?: string
+  failed_reason?: string
 }
 
 export interface TaskState {
@@ -63,6 +70,7 @@ export interface TaskState {
   updated_at?: string
   pending_break?: { actor?: string; round?: number } | null
   latest_failure?: Failure | null
+  health_check?: HealthCheckResult | null
 }
 
 export interface Countdown {

@@ -46,6 +46,24 @@ export interface BuildActorPromptInput {
   userMessage?: string
 }
 
+export function buildPingPrompt(actor: string): string {
+  const parts = [
+    '# buddy actor turn',
+    '',
+    '## Actor',
+    actor,
+    '',
+    BUDDY_MESSAGE_PROTOCOL,
+    '',
+    '## Task',
+    'Health check — respond to confirm you are operational.',
+    '',
+    '## Instruction',
+    `This is a connectivity check. Reply with \`{"type":"chat","content":"pong"}\` to confirm you are operational.`
+  ]
+  return `${parts.join('\n').trimEnd()}\n`
+}
+
 export function buildActorPrompt(input: BuildActorPromptInput): string {
   const taskText = input.taskText.trim()
   const contextText = input.contextText.trim()

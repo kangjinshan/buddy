@@ -22,7 +22,7 @@ export function defaultLauncherFor(actor: string): Launcher {
 export function normalizeLauncher(actor: string, launcher?: Partial<Launcher> | null): Launcher {
   const fallback = defaultLauncherFor(actor)
   return {
-    command: typeof launcher?.command === 'string' ? launcher.command : fallback.command,
+    command: typeof launcher?.command === 'string' && launcher.command.trim() !== '' ? launcher.command : fallback.command,
     env: launcher?.env ? { ...launcher.env } : { ...fallback.env },
     timeout_seconds:
       typeof launcher?.timeout_seconds === 'number'
