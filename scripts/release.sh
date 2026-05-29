@@ -148,7 +148,7 @@ for f in "${UPLOAD_FILES[@]}"; do
 done
 echo "   Upload complete ✓"
 
-# --- 8. Create GitLab Release ---
+# --- 8. Create or update GitLab Release ---
 echo ">> Creating GitLab Release..."
 ASSETS_LINKS="$(cat <<EOF
 [
@@ -161,12 +161,26 @@ ASSETS_LINKS="$(cat <<EOF
 ]
 EOF
 )"
-glab release create "$VERSION" \
-  --name "Buddy ${VERSION}" \
-  --notes "Release ${VERSION}" \
-  --assets-links "$ASSETS_LINKS" \
-  || echo "   Release already exists or assets already linked, continuing ✓"
-echo "   Release created ✓"
+if glab release view "$VERSION" >/dev/null 2>&1; then
+  echo "   Release already exists, updating assets only..."
+  for link in $(echo "$ASSETS_LINKS" | node -e "
+    const links=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+    links.forEach((l,i)=>console.log(i+'|'+l.name+'|'+l.url));
+  "); do
+    link_name="$(echo "$link" | cut -d'|' -f2)"
+    link_url="$(echo "$link" | cut -d'|' -f3-)"
+    glab api --method POST "/projects/${PROJECT_ID}/releases/${VERSION}/assets/links" \
+      -f "name=$link_name" -f "url=$link_url" -f "link_type=package" >/dev/null 2>&1 \
+      || true
+  done
+else
+  glab release create "$VERSION" \
+    --name "Buddy ${VERSION}" \
+    --notes "Release ${VERSION}" \
+    --assets-links "$ASSETS_LINKS" \
+    || echo "   Release creation issue, continuing ✓"
+fi
+echo "   Release ready ✓"
 
 # --- 9. Deploy to update server ---
 echo ">> Deploying to update server..."
