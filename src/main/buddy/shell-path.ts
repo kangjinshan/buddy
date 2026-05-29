@@ -16,6 +16,17 @@ export function installHintFor(command: string): string | undefined {
 export function fixShellPath(): void {
   if (process.platform !== 'darwin') return
   if (process.env.NODE_ENV === 'test') return
+
+  const home = homedir()
+  const extras = [
+    join(home, '.kimi-code/bin'),
+    join(home, '.local/bin'),
+    '/opt/homebrew/bin',
+    '/usr/local/bin',
+    join(home, '.npm-global/bin'),
+    join(home, '.cargo/bin')
+  ]
+
   try {
     const shell = process.env.SHELL || '/bin/zsh'
     const path = execSync(`${shell} -il -c 'echo "$PATH"' 2>/dev/null`, { encoding: 'utf8', timeout: 5000 }).trim()
@@ -23,17 +34,12 @@ export function fixShellPath(): void {
       process.env.PATH = path
     }
   } catch {
-    const home = homedir()
-    const extras = [
-      join(home, '.kimi-code/bin'),
-      join(home, '.local/bin'),
-      '/opt/homebrew/bin',
-      '/usr/local/bin',
-      join(home, '.npm-global/bin'),
-      join(home, '.cargo/bin')
-    ]
-    const current = (process.env.PATH ?? '').split(':')
-    const merged = [...new Set([...extras, ...current])]
-    process.env.PATH = merged.join(':')
+    // Shell extraction failed; fallback paths merged below
   }
+
+  // Always merge common tool paths — the login shell PATH may be incomplete
+  // when the app is launched from Finder (no terminal context).
+  const current = (process.env.PATH ?? '').split(':')
+  const merged = [...new Set([...extras, ...current])]
+  process.env.PATH = merged.join(':')
 }
