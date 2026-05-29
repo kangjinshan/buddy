@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.4] - 2026-05-29
+
+### Added
+
+- 改为手动下载更新，侧边栏显示更新状态徽标 (feat: updater)
+
+### Changed
+
+- 优化 /release 命令，优先使用 upstream 远程仓库
+
+---
+
 ## [1.0.3] - 2026-05-29
 
 ### Changed
@@ -113,5 +125,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - 项目需求文档 (REQUIREMENTS.md)
 - 项目结构初始化
 
+[1.0.4]: https://gitlab.weibo.cn/ailab/buddy-macos/-/tags/v1.0.4
 [1.0.3]: https://gitlab.weibo.cn/ailab/buddy-macos/-/tags/v1.0.3
 [1.0.0]: https://gitlab.weibo.cn/ailab/buddy-macos/-/tags/v1.0.0
