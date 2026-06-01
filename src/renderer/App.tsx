@@ -245,6 +245,11 @@ export default function App() {
 
   const modalDefaultRepoRoot = (() => {
     if (typeof pendingRepoRoot === 'string' && pendingRepoRoot) return pendingRepoRoot
+    // Use the currently selected task's project path as default
+    if (selectedTaskId) {
+      const selectedTask = tasks.find(t => t.task_id === selectedTaskId)
+      if (selectedTask?.repo_root) return selectedTask.repo_root
+    }
     try {
       const last = localStorage.getItem('buddy.lastRepoRoot')
       if (last && last !== '[object Object]') return last
