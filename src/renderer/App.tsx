@@ -18,6 +18,20 @@ import { ACTOR_LABEL_KEY, Actor } from './lib/format'
 import { isTaskReadyToStart } from './lib/taskState'
 import { readStringArraySetting, visibleTasksForShortcuts, markTaskAsRead, readLastSelectedTask, saveLastSelectedTask, clearLastSelectedTask } from './lib/taskList'
 import type { GlobalSettings, InstructionQueueItem, Attachment, AttachmentMeta } from '../shared/types'
+
+const IMAGE_EXTS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'ico'])
+const MIME_MAP: Record<string, string> = {
+  png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg',
+  gif: 'image/gif', webp: 'image/webp', svg: 'image/svg+xml', bmp: 'image/bmp', ico: 'image/x-icon',
+  pdf: 'application/pdf', txt: 'text/plain', md: 'text/markdown',
+  json: 'application/json', csv: 'text/csv',
+}
+
+function ensureMimeType(att: Attachment): string {
+  if (att.mimeType) return att.mimeType
+  const ext = att.name.split('.').pop()?.toLowerCase() ?? ''
+  return MIME_MAP[ext] ?? 'application/octet-stream'
+}
 import { defaultLauncherFor, normalizeGlobalSettings } from '../shared/defaults'
 
 export default function App() {
@@ -263,7 +277,7 @@ export default function App() {
             continue
           }
           savedPaths.push(savedPath)
-          attachmentMeta.push({ path: savedPath, name: att.name, mimeType: att.mimeType, size: att.size })
+          attachmentMeta.push({ path: savedPath, name: att.name, mimeType: ensureMimeType(att), size: att.size })
         } catch (err) {
           console.error('Failed to save attachment:', att.name, err)
         }
@@ -331,7 +345,7 @@ export default function App() {
             continue
           }
           savedPaths.push(savedPath)
-          attachmentMeta.push({ path: savedPath, name: att.name, mimeType: att.mimeType, size: att.size })
+          attachmentMeta.push({ path: savedPath, name: att.name, mimeType: ensureMimeType(att), size: att.size })
         } catch (err) {
           console.error('Failed to save attachment:', att.name, err)
         }
@@ -391,11 +405,12 @@ export default function App() {
     if (item.attachments && item.attachments.length > 0) {
       const restored: Attachment[] = []
       for (const meta of item.attachments) {
-        const isImage = meta.mimeType.startsWith('image/')
+        const resolvedMime = meta.mimeType || (MIME_MAP[meta.name.split('.').pop()?.toLowerCase() ?? ''] ?? 'application/octet-stream')
+        const isImage = resolvedMime.startsWith('image/')
         let previewUrl: string | undefined
         if (isImage) {
           try {
-            previewUrl = await window.api.readFileAsDataURL(meta.path, meta.mimeType)
+            previewUrl = await window.api.readFileAsDataURL(meta.path, resolvedMime)
           } catch {
             // Fall back to no preview
           }
@@ -404,7 +419,7 @@ export default function App() {
           id: Math.random().toString(36).slice(2, 10) + Date.now().toString(36),
           name: meta.name,
           category: isImage ? 'image' : 'file',
-          mimeType: meta.mimeType,
+          mimeType: resolvedMime,
           size: meta.size,
           filePath: meta.path,
           previewUrl,

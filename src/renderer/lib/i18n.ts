@@ -172,8 +172,8 @@ const en = {
   'settings.collab.desc': 'Default values used when creating a task',
   'settings.collab.maxRounds.title': 'Max session rounds',
   'settings.collab.maxRounds.desc': 'Maximum collaboration rounds per session (-1 = unlimited)',
-  'settings.collab.timeout.title': 'Launcher timeout (seconds)',
-  'settings.collab.timeout.desc': 'Maximum runtime of a launcher, shared across all CLIs',
+  'settings.collab.timeout.title': 'Round timeout (seconds)',
+  'settings.collab.timeout.desc': 'Maximum execution time per round for each actor, shared across all actors',
 
   // Settings — Appearance
   'settings.appearance.theme.title': 'Theme',
@@ -244,6 +244,9 @@ const en = {
   'running.collapseDetail': 'Collapse live output',
   'running.streamingWaiting': 'Waiting for output…',
 
+  // Round events
+  'roundEvents.expand': 'Details',
+
   // StatusBar
   'statusBar.runStatus': 'Run status',
   'statusBar.taskSettings': 'Task settings',
@@ -309,6 +312,19 @@ const en = {
   'event.actor.failed': 'Failed',
   'event.actor.interrupted': 'Interrupted',
   'event.actor.stderr': 'Stderr',
+  'event.actor.stdout': 'Output',
+  'event.human.message': 'Human input',
+  'event.countdown.paused': 'Countdown paused',
+  'event.countdown.skipped': 'Countdown skipped',
+  'event.break.pending': 'Break requested',
+  'event.break.rejected': 'Break rejected',
+  'event.roundWindow.paused': 'Round window paused',
+  'event.healthCheck.started': 'Health check started',
+  'event.healthCheck.actorPassed': 'Health check passed',
+  'event.healthCheck.actorFailed': 'Health check failed',
+  'event.healthCheck.passed': 'All checks passed',
+  'event.healthCheck.failed': 'Health check failed',
+  'event.failureThreshold.reached': 'Failure limit reached',
   'event.permission.detected': 'Permission',
 
   // Create task modal
@@ -491,8 +507,8 @@ const zhCN: typeof en = {
   'settings.collab.desc': '新建任务时使用的默认参数',
   'settings.collab.maxRounds.title': '最大会话次数',
   'settings.collab.maxRounds.desc': '单个会话的最大协作轮数（-1 表示不限制）',
-  'settings.collab.timeout.title': '启动命令超时（秒）',
-  'settings.collab.timeout.desc': '启动命令运行的最长时间，所有 CLI 共用',
+  'settings.collab.timeout.title': '单轮执行超时（秒）',
+  'settings.collab.timeout.desc': '每个 AI 在单轮协作中的最长运行时间，超时后自动终止，所有 actor 共享此值',
 
   'settings.appearance.theme.title': '主题',
   'settings.appearance.theme.desc': '选择应用的外观主题',
@@ -555,6 +571,8 @@ const zhCN: typeof en = {
   'running.expandDetail': '查看实时输出',
   'running.collapseDetail': '收起实时输出',
   'running.streamingWaiting': '等待输出…',
+
+  'roundEvents.expand': '详情',
 
   'statusBar.runStatus': '运行状态',
   'statusBar.taskSettings': '任务设置',
@@ -620,6 +638,19 @@ const zhCN: typeof en = {
   'event.actor.failed': '执行失败',
   'event.actor.interrupted': '已打断',
   'event.actor.stderr': '错误输出',
+  'event.actor.stdout': '标准输出',
+  'event.human.message': '人工输入',
+  'event.countdown.paused': '倒计时暂停',
+  'event.countdown.skipped': '倒计时跳过',
+  'event.break.pending': '请求结束',
+  'event.break.rejected': '结束被拒绝',
+  'event.roundWindow.paused': '轮次窗口暂停',
+  'event.healthCheck.started': '连通性检查开始',
+  'event.healthCheck.actorPassed': '连通性检查通过',
+  'event.healthCheck.actorFailed': '连通性检查失败',
+  'event.healthCheck.passed': '所有检查通过',
+  'event.healthCheck.failed': '连通性检查失败',
+  'event.failureThreshold.reached': '失败次数达上限',
   'event.permission.detected': '权限请求',
 
   'modal.create.title': '新建任务',
@@ -799,8 +830,8 @@ const zhTW: typeof en = {
   'settings.collab.desc': '新增任務時使用的預設參數',
   'settings.collab.maxRounds.title': '最大會話次數',
   'settings.collab.maxRounds.desc': '單一會話的最大協作輪數（-1 表示不限制）',
-  'settings.collab.timeout.title': '啟動指令逾時（秒）',
-  'settings.collab.timeout.desc': '啟動指令執行的最長時間，所有 CLI 共用',
+  'settings.collab.timeout.title': '單輪執行逾時（秒）',
+  'settings.collab.timeout.desc': '每個 AI 在單輪協作中的最長執行時間，逾時後自動終止，所有 actor 共用此值',
 
   'settings.appearance.theme.title': '主題',
   'settings.appearance.theme.desc': '選擇應用的外觀主題',
@@ -864,6 +895,8 @@ const zhTW: typeof en = {
   'running.expandDetail': '查看即時輸出',
   'running.collapseDetail': '收合即時輸出',
   'running.streamingWaiting': '等待輸出…',
+
+  'roundEvents.expand': '詳情',
 
   'statusBar.runStatus': '執行狀態',
   'statusBar.taskSettings': '任務設定',
@@ -929,6 +962,19 @@ const zhTW: typeof en = {
   'event.actor.failed': '執行失敗',
   'event.actor.interrupted': '已中斷',
   'event.actor.stderr': '錯誤輸出',
+  'event.actor.stdout': '標準輸出',
+  'event.human.message': '人工輸入',
+  'event.countdown.paused': '倒數暫停',
+  'event.countdown.skipped': '倒數跳過',
+  'event.break.pending': '請求結束',
+  'event.break.rejected': '結束被拒絕',
+  'event.roundWindow.paused': '輪次窗口暫停',
+  'event.healthCheck.started': '連通性檢查開始',
+  'event.healthCheck.actorPassed': '連通性檢查通過',
+  'event.healthCheck.actorFailed': '連通性檢查失敗',
+  'event.healthCheck.passed': '所有檢查通過',
+  'event.healthCheck.failed': '連通性檢查失敗',
+  'event.failureThreshold.reached': '失敗次數達上限',
   'event.permission.detected': '權限請求',
 
   'modal.create.title': '新增任務',

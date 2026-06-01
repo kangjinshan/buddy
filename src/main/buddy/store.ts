@@ -17,6 +17,8 @@ import type {
   GlobalSettings,
   InstructionQueueItem,
   Launcher,
+  RoundEventEntry,
+  RoundEventSummary,
   Task,
   TaskDetail,
   TaskSettings,
@@ -26,6 +28,7 @@ import type {
 import { normalizeGlobalSettings, normalizeLaunchers } from '../../shared/defaults'
 import { canonicalRepoRoot, createBuddyPaths, taskDir, workspaceKeyForRepo } from './paths'
 import { redactJsonValue } from './redact'
+import { parseJsonlBuffer } from './parsers'
 import { parseEventLine, parseGlobalSettings, parseTaskSettings, parseTaskState } from './schemas'
 
 interface TaskMeta {
@@ -301,6 +304,132 @@ export class BuddyStore {
 
   transcriptJsonlPath(taskId: string, workspaceKey: string): string {
     return join(this.taskDirectory(taskId, workspaceKey), 'transcript.jsonl')
+  }
+
+  async getRoundEvents(taskId: string, runId: string, workspaceKey: string): Promise<RoundEventSummary | null> {
+    const dir = this.taskDirectory(taskId, workspaceKey)
+    const eventsPath = join(dir, 'artifacts', `${runId}-events.jsonl`)
+    const raw = await readOptionalText(eventsPath)
+    if (!raw.trim()) return null
+
+    const events: RoundEventEntry[] = []
+    let inputTokens = 0
+    let outputTokens = 0
+    let durationMs: number | undefined
+    let costUsd: number | undefined
+    let model: string | undefined
+
+    for (const event of parseJsonlBuffer(raw)) {
+      // Claude stream-json format
+      if (event.type === 'system' && event.subtype === 'init') {
+        model = event.model as string | undefined
+      }
+
+      if (event.type === 'assistant' && Array.isArray((event.message as Record<string, unknown>)?.content)) {
+        for (const part of (event.message as Record<string, unknown>).content as Record<string, unknown>[]) {
+          if (part.type === 'thinking') {
+            events.push({ type: 'thinking', thinkingLength: (part.thinking as string)?.length ?? 0 })
+          } else if (part.type === 'text') {
+            events.push({ type: 'text', text: part.text as string })
+          } else if (part.type === 'tool_use') {
+            events.push({ type: 'tool_use', toolName: part.name as string, toolInput: part.input as Record<string, unknown> })
+          }
+        }
+      }
+
+      if (event.type === 'user' && Array.isArray((event.message as Record<string, unknown>)?.content)) {
+        for (const part of (event.message as Record<string, unknown>).content as Record<string, unknown>[]) {
+          if (part.type === 'tool_result') {
+            const preview = typeof part.content === 'string'
+              ? part.content.slice(0, 200)
+              : JSON.stringify(part.content).slice(0, 200)
+            events.push({ type: 'tool_result', toolResultPreview: preview, isError: part.is_error as boolean | undefined })
+          }
+        }
+      }
+
+      if (event.type === 'result') {
+        if (event.usage) {
+          inputTokens = (event.usage as Record<string, unknown>).input_tokens as number ?? inputTokens
+          outputTokens = (event.usage as Record<string, unknown>).output_tokens as number ?? outputTokens
+        }
+        if (event.duration_ms != null) durationMs = event.duration_ms as number
+        if (event.total_cost_usd != null) costUsd = event.total_cost_usd as number
+        if (event.model) model = event.model as string
+      }
+
+      // Codex format: content array with tool_call / text
+      if (Array.isArray(event.content)) {
+        for (const part of event.content as Record<string, unknown>[]) {
+          if (part.type === 'tool_call' && part.name) {
+            events.push({ type: 'tool_use', toolName: part.name as string, toolInput: part.input as Record<string, unknown> | undefined })
+          } else if (part.type === 'text' && part.text) {
+            events.push({ type: 'text', text: part.text as string })
+          }
+        }
+      }
+      if (event.type === 'response.completed' && event.response) {
+        const resp = event.response as Record<string, unknown>
+        if (resp.usage) {
+          inputTokens = (resp.usage as Record<string, unknown>).input_tokens as number ?? inputTokens
+          outputTokens = (resp.usage as Record<string, unknown>).output_tokens as number ?? outputTokens
+        }
+        if (resp.model) model = resp.model as string
+      }
+
+      // Kimi format: role=assistant with content
+      if (event.role === 'assistant' && typeof event.content === 'string' && event.content.trim()) {
+        events.push({ type: 'text', text: event.content })
+      }
+      // Kimi tool calls
+      if (Array.isArray(event.tool_calls)) {
+        for (const tc of event.tool_calls as Record<string, unknown>[]) {
+          events.push({ type: 'tool_use', toolName: (tc.function ?? tc.name) as string | undefined, toolInput: tc.arguments as Record<string, unknown> | undefined })
+        }
+      }
+
+      // OpenCode format: tool_use events with part.tool, input in part.state.input
+      if (event.type === 'tool_use') {
+        const part = objectValue(event.part)
+        const toolName = (part?.tool ?? 'tool') as string
+        // OpenCode stores tool input in part.state.input, not part.input
+        const state = objectValue(part?.state)
+        const toolInput = (state?.input ?? part?.input) as Record<string, unknown> | undefined
+        events.push({ type: 'tool_use', toolName, toolInput })
+        // OpenCode tool result is in part.state.output
+        if (state?.output) {
+          const preview = typeof state.output === 'string'
+            ? state.output.slice(0, 200)
+            : JSON.stringify(state.output).slice(0, 200)
+          const isError = state.status === 'error' || (state.metadata as Record<string, unknown>)?.exit !== 0 && (state.metadata as Record<string, unknown>)?.exit != null
+          events.push({ type: 'tool_result', toolResultPreview: preview, isError: isError as boolean | undefined })
+        }
+      }
+      if (event.type === 'text') {
+        const part = objectValue(event.part)
+        const t = part?.text as string | undefined
+        if (t) events.push({ type: 'text', text: t })
+      }
+      // OpenCode step_finish: tokens in part.tokens, cost in part.cost
+      if (event.type === 'step_finish') {
+        const part = objectValue(event.part)
+        const tokens = objectValue(part?.tokens)
+        if (tokens) {
+          const cacheRead = (objectValue(tokens.cache)?.read as number) ?? 0
+          inputTokens = ((tokens.input as number) ?? 0) + cacheRead
+          outputTokens = (tokens.output as number) ?? outputTokens
+        }
+        if (part?.cost != null) costUsd = part.cost as number
+      }
+
+      // Generic: item.text
+      if (event.item && typeof event.item === 'object' && !Array.isArray(event.item)) {
+        const itemText = (event.item as Record<string, unknown>).text as string | undefined
+        if (itemText) events.push({ type: 'text', text: itemText })
+      }
+    }
+
+    return { runId, events, inputTokens, outputTokens, durationMs, costUsd, model }
   }
 
   private async writeWorkspaceMetadata(workspaceKey: string, repoRoot: string, now: string): Promise<void> {

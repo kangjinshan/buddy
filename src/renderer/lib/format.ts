@@ -41,13 +41,21 @@ const EVENT_TYPE_KEY: Record<string, TranslationKey> = {
   'actor.finished': 'event.actor.finished',
   'actor.failed': 'event.actor.failed',
   'actor.interrupted': 'event.actor.interrupted',
+  'actor.stdout': 'event.actor.stdout',
   'actor.stderr': 'event.actor.stderr',
-  'permission.detected': 'event.permission.detected',
-  'health_check.started': 'health_check.started',
-  'health_check.actor_passed': 'health_check.actorPassed',
-  'health_check.actor_failed': 'health_check.actorFailed',
-  'health_check.passed': 'health_check.allPassed',
-  'health_check.failed': 'health_check.failed'
+  'human.message': 'event.human.message',
+  'countdown.paused': 'event.countdown.paused',
+  'countdown.skipped': 'event.countdown.skipped',
+  'break.pending': 'event.break.pending',
+  'break.rejected': 'event.break.rejected',
+  'round_window.paused': 'event.roundWindow.paused',
+  'health_check.started': 'event.healthCheck.started',
+  'health_check.actor_passed': 'event.healthCheck.actorPassed',
+  'health_check.actor_failed': 'event.healthCheck.actorFailed',
+  'health_check.passed': 'event.healthCheck.passed',
+  'health_check.failed': 'event.healthCheck.failed',
+  'failure_threshold.reached': 'event.failureThreshold.reached',
+  'permission.detected': 'event.permission.detected'
 }
 
 export function eventTypeLabel(type: string, lang: Language): string {

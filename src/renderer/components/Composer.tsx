@@ -28,8 +28,15 @@ function fileExt(name: string): string {
 }
 
 function isImageAttachment(att: Attachment): boolean {
-  return att.category === 'image' || att.mimeType.startsWith('image/')
+  if (att.category === 'image' || att.mimeType.startsWith('image/')) return true
+  if (!att.mimeType) {
+    const ext = att.name.split('.').pop()?.toLowerCase() ?? ''
+    if (IMAGE_EXTS.has(ext)) return true
+  }
+  return false
 }
+
+const IMAGE_EXTS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'ico'])
 
 const EXT_ICON_MAP: Record<string, typeof File> = {
   json: FileJson,

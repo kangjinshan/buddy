@@ -350,8 +350,8 @@ export class BuddyRunner {
       taskId,
       workspaceKey,
       'system',
-      `正在检查 ${actors.map((a) => actorDisplayName(a)).join(' 和 ')} 的连通性...`,
-      { kind: 'health_check' }
+      'health_check.started',
+      { kind: 'health_check', actors }
     )
 
     const runningResults = { ...actorResults }
@@ -389,13 +389,6 @@ export class BuddyRunner {
           actor,
           payload: { session_id: displayId ?? null }
         })
-        await this.store.appendTranscript(
-          taskId,
-          workspaceKey,
-          'system',
-          `${actorDisplayName(actor)} 连通性检查通过${displayId ? `，会话 ID: ${displayId.slice(0, 12)}...` : ''}`,
-          { kind: 'health_check' }
-        )
       } else {
         allPassed = false
         finalResults[actor] = 'failed'
@@ -410,13 +403,6 @@ export class BuddyRunner {
           actor,
           payload: { error: failedReason ?? 'Unknown error' }
         })
-        await this.store.appendTranscript(
-          taskId,
-          workspaceKey,
-          'system',
-          `${actorDisplayName(actor)} 连通性检查失败：${failedReason ?? '未知错误'}`,
-          { kind: 'health_check_failed' }
-        )
       }
     }
 
@@ -436,8 +422,15 @@ export class BuddyRunner {
         taskId,
         workspaceKey,
         'system',
-        '所有 actor 连通性检查通过，开始执行任务。',
-        { kind: 'health_check' }
+        'health_check.passed',
+        { kind: 'health_check', actors, session_ids: actors.map(a => {
+          const sid = a === 'codex'
+            ? (sessionUpdates.codex_thread_id)
+            : (a === 'claude' ? sessionUpdates.claude_session_id
+              : a === 'opencode' ? sessionUpdates.opencode_session_id
+                : sessionUpdates.kimi_session_id)
+          return { actor: a, session_id: (sid as string | undefined) ?? null }
+        }) }
       )
 
       if (this.executeLaunchers) {
@@ -463,8 +456,8 @@ export class BuddyRunner {
         taskId,
         workspaceKey,
         'system',
-        `连通性检查失败（${actorDisplayName(failedActor)}：${failedReason ?? '未知错误'}），任务已终止。请检查对应 CLI 是否已安装并可用。`,
-        { kind: 'health_check_failed' }
+        'health_check.failed',
+        { kind: 'health_check_failed', failed_actor: failedActor ?? '', failed_reason: failedReason ?? '' }
       )
       throw new Error(`连通性检查失败：${actorDisplayName(failedActor)} — ${failedReason ?? '未知错误'}`)
     }

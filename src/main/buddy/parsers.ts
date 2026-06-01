@@ -50,11 +50,18 @@ export function parseCodexJsonLine(line: string): ParsedActorLine {
 export function parseOpenCodeJsonLine(line: string): ParsedActorLine {
   const json = JSON.parse(line)
   const part = objectValue(json.part)
-  const text = json.type === 'text'
-    ? textValue(part?.text)
-    : json.type === 'error'
-      ? stringifyValue(json.error)
-      : undefined
+  let text: string | undefined
+
+  if (json.type === 'text') {
+    text = textValue(part?.text)
+  } else if (json.type === 'error') {
+    text = stringifyValue(json.error)
+  } else if (json.type === 'step_start') {
+    text = '...'
+  } else if (json.type === 'tool_use') {
+    const toolName = part?.tool ?? 'tool'
+    text = `🔧 ${toolName}`
+  }
 
   return {
     text,
@@ -314,16 +321,38 @@ function extractGenericJsonOutput(rawEvents: string): string {
   return chunks.join('\n').trim()
 }
 
-function parseJsonEvents(rawEvents: string): Array<Record<string, unknown>> {
-  const events: Array<Record<string, unknown>> = []
-  for (const raw of rawEvents.split(/\r?\n/)) {
-    if (!raw.trim()) continue
+export function parseJsonlBuffer(raw: string): Record<string, unknown>[] {
+  const results: Record<string, unknown>[] = []
+  let buffer = ''
+
+  for (const line of raw.split(/\r?\n/)) {
+    if (!line.trim()) continue
+    buffer = buffer ? buffer + '\n' + line : line
     try {
-      const event = JSON.parse(raw)
-      if (event && typeof event === 'object' && !Array.isArray(event)) events.push(event)
-    } catch {}
+      const obj = JSON.parse(buffer)
+      if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
+        results.push(obj)
+      }
+      buffer = ''
+    } catch {
+      // incomplete JSON, keep accumulating
+    }
   }
-  return events
+
+  if (buffer.trim()) {
+    try {
+      const obj = JSON.parse(buffer)
+      if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
+        results.push(obj)
+      }
+    } catch { /* discard */ }
+  }
+
+  return results
+}
+
+function parseJsonEvents(rawEvents: string): Array<Record<string, unknown>> {
+  return parseJsonlBuffer(rawEvents)
 }
 
 function claudeSessionIdFromEvent(event: Record<string, unknown>): string | undefined {

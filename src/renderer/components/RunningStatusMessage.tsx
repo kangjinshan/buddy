@@ -125,7 +125,11 @@ export function RunningStatusMessage({
             )}
           </div>
         </div>
-        <div className="running-status-body">
+        <div
+          className="running-status-body"
+          onClick={onToggleExpand}
+          style={onToggleExpand ? { cursor: 'pointer' } : undefined}
+        >
           {hint}{dotsPhases[dots]}
         </div>
       </div>
@@ -136,15 +140,23 @@ export function RunningStatusMessage({
 export function RunningDetailPanel({
   actor,
   streamLines,
+  lastMessage,
   onCollapse
 }: {
   actor: string
   streamLines: ActorStreamLine[]
+  lastMessage?: string
   onCollapse?: () => void
 }) {
   const t = useT()
   const scrollRef = useRef<HTMLDivElement>(null)
   const userScrolledUp = useRef(false)
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+    }
+  }, [])
 
   const isNearBottom = () => {
     const el = scrollRef.current
@@ -172,7 +184,11 @@ export function RunningDetailPanel({
     <div className="running-detail-panel" style={{ '--actor-color': actorColorVar(actor) } as React.CSSProperties}>
       <div ref={scrollRef} className="running-detail-content">
         {streamLines.length === 0 ? (
-          <div className="running-detail-empty">{t('running.streamingWaiting')}</div>
+          lastMessage ? (
+            <div className="running-detail-line running-detail-fallback">{lastMessage}</div>
+          ) : (
+            <div className="running-detail-empty">{t('running.streamingWaiting')}</div>
+          )
         ) : (
           streamLines.map((line, i) => (
             <div key={i} className="running-detail-line">{line.text}</div>

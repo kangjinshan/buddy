@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api'
-import type { GlobalSettings, GitDiffStats, GitRemote, GitStatusResult, TaskEventEnvelope } from '../../shared/types'
+import type { GlobalSettings, GitDiffStats, GitRemote, GitStatusResult, RoundEventSummary, TaskEventEnvelope } from '../../shared/types'
 
 export function useHealthCheck() {
   return useQuery({
@@ -246,6 +246,15 @@ export function useGitCommitAndPush() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['gitStatus'] })
     }
+  })
+}
+
+export function useRoundEvents(taskId: string | null, runId: string | null, workspaceKey?: string) {
+  return useQuery({
+    queryKey: ['roundEvents', taskId, runId],
+    queryFn: () => api.getRoundEvents(taskId!, runId!, workspaceKey),
+    enabled: !!taskId && !!runId,
+    staleTime: Infinity
   })
 }
 

@@ -10,6 +10,7 @@ import type {
   Event,
   GlobalSettings,
   InstructionQueueItem,
+  RoundEventSummary,
   SendMessageInput,
   StartTaskInput,
   Task,
@@ -124,6 +125,11 @@ export class BuddyCoreService {
   getEvents(taskId: string, since: number, workspaceKey?: string): Promise<{ events: Event[] }> {
     if (!workspaceKey) throw new Error('workspaceKey is required')
     return this.store.getEvents(taskId, since, workspaceKey)
+  }
+
+  getRoundEvents(taskId: string, runId: string, workspaceKey?: string): Promise<RoundEventSummary | null> {
+    if (!workspaceKey) throw new Error('workspaceKey is required')
+    return this.store.getRoundEvents(taskId, runId, workspaceKey)
   }
 
   updateGlobalSettings(settings: GlobalSettings): Promise<GlobalSettings> {

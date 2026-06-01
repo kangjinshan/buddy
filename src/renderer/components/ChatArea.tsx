@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { ListOrdered, CornerDownRight, Trash2, Sparkles, Paperclip, Plus } from 'lucide-react'
-import { TaskDetail, InstructionQueueItem, Attachment } from '../../shared/types'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { ListOrdered, CornerDownRight, Trash2, Sparkles, Plus, FileCode2, FileText, File, FileJson, FileArchive, FileSpreadsheet, Image as ImageIcon } from 'lucide-react'
+import { TaskDetail, InstructionQueueItem, Attachment, AttachmentMeta } from '../../shared/types'
 import { MessageBubble } from './MessageBubble'
 import { RunningStatusMessage, RunningDetailPanel } from './RunningStatusMessage'
 import { Composer } from './Composer'
@@ -10,6 +10,76 @@ import { useActorStream } from '../hooks/useBuddy'
 
 import { useT } from '../hooks/useI18n'
 import { renderMarkdown } from '../lib/markdown'
+
+const IMAGE_EXTS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'ico'])
+
+const EXT_ICON_MAP: Record<string, typeof File> = {
+  json: FileJson,
+  zip: FileArchive, tar: FileArchive, gz: FileArchive, rar: FileArchive, '7z': FileArchive,
+  csv: FileSpreadsheet, xls: FileSpreadsheet, xlsx: FileSpreadsheet,
+  ts: FileCode2, tsx: FileCode2, js: FileCode2, jsx: FileCode2,
+  py: FileCode2, go: FileCode2, rs: FileCode2, rb: FileCode2,
+  java: FileCode2, c: FileCode2, cpp: FileCode2, h: FileCode2,
+  swift: FileCode2, kt: FileCode2,
+  md: FileText, txt: FileText, rtf: FileText,
+  doc: FileText, docx: FileText, pdf: FileText,
+  xml: FileText, yaml: FileText, yml: FileText, toml: FileText,
+  png: ImageIcon, jpg: ImageIcon, jpeg: ImageIcon, gif: ImageIcon,
+  webp: ImageIcon, svg: ImageIcon, bmp: ImageIcon, ico: ImageIcon,
+}
+
+function isImageMeta(a: AttachmentMeta): boolean {
+  if (a.mimeType.startsWith('image/')) return true
+  if (!a.mimeType) {
+    const ext = a.name.split('.').pop()?.toLowerCase() ?? ''
+    return IMAGE_EXTS.has(ext)
+  }
+  return false
+}
+
+function resolveMimeType(a: AttachmentMeta): string {
+  if (a.mimeType) return a.mimeType
+  const ext = a.name.split('.').pop()?.toLowerCase() ?? ''
+  if (IMAGE_EXTS.has(ext)) return `image/${ext === 'jpg' ? 'jpeg' : ext}`
+  return 'application/octet-stream'
+}
+
+function SmallImageThumb({ path, mimeType }: { path: string; mimeType: string }) {
+  const [src, setSrc] = useState<string | null>(null)
+  useEffect(() => {
+    let revoked = false
+    window.api.readFileAsDataURL(path, mimeType).then(url => {
+      if (!revoked) setSrc(url)
+    }).catch(() => {})
+    return () => { revoked = true }
+  }, [path, mimeType])
+
+  if (!src) return <div className="w-7 h-7 bg-bg-subtle rounded flex items-center justify-center shrink-0"><ImageIcon size={12} className="text-fg-muted" /></div>
+  return <img src={src} alt="" className="w-7 h-7 rounded object-cover shrink-0" />
+}
+
+function QueueAttachmentPreviews({ attachments }: { attachments: AttachmentMeta[] }) {
+  const imageAtts = attachments.filter(a => isImageMeta(a))
+  const fileAtts = attachments.filter(a => !isImageMeta(a))
+  if (imageAtts.length === 0 && fileAtts.length === 0) return null
+  return (
+    <div className="flex items-center gap-1.5 shrink-0 ml-1">
+      {imageAtts.map((att, i) => (
+        <SmallImageThumb key={`img-${i}`} path={att.path} mimeType={resolveMimeType(att)} />
+      ))}
+      {fileAtts.map((att, i) => {
+        const ext = att.name.split('.').pop()?.toUpperCase() ?? ''
+        const Icon = EXT_ICON_MAP[att.name.split('.').pop()?.toLowerCase() ?? ''] ?? File
+        return (
+          <div key={`file-${i}`} className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-bg-subtle text-[10px] text-fg-muted shrink-0">
+            <Icon size={10} />
+            <span className="truncate max-w-[80px]">{att.name}</span>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
 
 interface ChatAreaProps {
   task: TaskDetail | null
@@ -38,14 +108,26 @@ export function ChatArea({ task, hasAnyTasks, onSendMessage, onStartTask, onInte
 
   const status = task?.state?.status
   const isRunning = status?.startsWith('RUNNING_') || status === 'PINGING' || false
-  const activeRunId = isRunning ? task?.state?.active_run?.run_id : null
-  const activeActor = isRunning ? task?.state?.active_run?.actor : null
+  const activeRunId = task?.state?.active_run?.run_id ?? null
+  const activeActor = task?.state?.active_run?.actor ?? null
   const streamLines = useActorStream(task?.task_id ?? null, activeRunId ?? null)
 
-  // Collapse detail panel when actor stops running
+  const lastActorMessage = useMemo(() => {
+    if (!activeActor || !task?.transcript) return undefined
+    for (let i = task.transcript.length - 1; i >= 0; i--) {
+      if (task.transcript[i].role === activeActor) {
+        return task.transcript[i].content
+      }
+    }
+    return undefined
+  }, [activeActor, task?.transcript])
+
+  // Collapse detail panel only on terminal states
   useEffect(() => {
-    if (!isRunning) setDetailExpanded(false)
-  }, [isRunning])
+    if (status === 'DONE' || status === 'PAUSED' || status === 'READY' || status === 'FAILED') {
+      setDetailExpanded(false)
+    }
+  }, [status])
 
   const handleToggleExpand = useCallback(() => {
     setDetailExpanded(prev => {
@@ -156,7 +238,7 @@ export function ChatArea({ task, hasAnyTasks, onSendMessage, onStartTask, onInte
               </div>
             )}
             {task.transcript.map((entry, index) => (
-              <MessageBubble key={index} entry={entry} />
+              <MessageBubble key={index} entry={entry} taskId={task.task_id} workspaceKey={task.workspace_key} />
             ))}
             {isRunning && task.state.active_run?.actor && (
               <RunningStatusMessage
@@ -167,10 +249,11 @@ export function ChatArea({ task, hasAnyTasks, onSendMessage, onStartTask, onInte
                 onToggleExpand={handleToggleExpand}
               />
             )}
-            {detailExpanded && isRunning && activeActor && (
+            {detailExpanded && activeActor && (
               <RunningDetailPanel
                 actor={activeActor}
                 streamLines={streamLines}
+                lastMessage={lastActorMessage}
                 onCollapse={handleToggleExpand}
               />
             )}
@@ -201,16 +284,13 @@ export function ChatArea({ task, hasAnyTasks, onSendMessage, onStartTask, onInte
             <div className="border-t border-l border-r border-b-0 border-border rounded-t-lg bg-bg-elevated px-3 py-2 space-y-0.5">
               {task!.state.instruction_queue!.map((item) => {
                 const cleanedContent = item.content.replace(/\n*\[Attachments\]\n(?:- .*\n?)+/g, '').trim()
-                const attCount = item.attachments?.length ?? 0
+                const hasAttachments = (item.attachments?.length ?? 0) > 0
                 return (
                   <div key={item.id} className="flex items-center gap-2 px-1 py-1 text-xs group">
                     <ListOrdered size={14} className="text-fg-muted shrink-0" />
                     <span className="flex-1 truncate text-fg-secondary">{cleanedContent}</span>
-                    {attCount > 0 && (
-                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-bg-subtle text-fg-muted text-[10px] shrink-0">
-                        <Paperclip size={10} />
-                        {attCount}
-                      </span>
+                    {hasAttachments && item.attachments && (
+                      <QueueAttachmentPreviews attachments={item.attachments} />
                     )}
                   <div className="flex items-center gap-1.5 shrink-0 opacity-60 group-hover:opacity-100 transition-opacity">
                     <button

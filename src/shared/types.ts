@@ -234,6 +234,29 @@ export interface CountdownInput {
   workspace_key?: string
 }
 
+export interface RoundEventEntry {
+  type: 'thinking' | 'text' | 'tool_use' | 'tool_result' | 'result'
+  thinkingLength?: number
+  text?: string
+  toolName?: string
+  toolInput?: Record<string, unknown>
+  toolResultPreview?: string
+  isError?: boolean
+  durationMs?: number
+  costUsd?: number
+  model?: string
+}
+
+export interface RoundEventSummary {
+  runId: string
+  events: RoundEventEntry[]
+  inputTokens: number
+  outputTokens: number
+  durationMs?: number
+  costUsd?: number
+  model?: string
+}
+
 export type GitFileStatusCode = 'M' | 'A' | 'D' | 'R' | 'C' | 'U' | '?'
 
 export interface GitFileStatus {
