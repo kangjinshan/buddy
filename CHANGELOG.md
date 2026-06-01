@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.14] - 2026-06-01
+
+### Added
+- 任务完成时展示汇总统计表：双 Actor 的模型、Token 用量（含缓存读取）、耗时、费用、轮次一目了然，合计行显示任务整体开销
+
+### Changed
+- 新建任务时默认使用当前选中任务的项目路径，减少重复输入
+
+### Fixed
+- 修复 GitLab Release 资产链接创建失败的问题：改用 Web 可访问的下载 URL，并用 tab 分隔解析替代管道符解析避免链接名称含空格时出错
+
+---
+
 ## [1.0.13] - 2026-06-01
 
 ### Added
@@ -239,6 +252,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - 项目需求文档 (REQUIREMENTS.md)
 - 项目结构初始化
 
+[1.0.14]: https://gitlab.weibo.cn/ailab/buddy-macos/-/tags/v1.0.14
 [1.0.13]: https://gitlab.weibo.cn/ailab/buddy-macos/-/tags/v1.0.13
 [1.0.12]: https://gitlab.weibo.cn/ailab/buddy-macos/-/tags/v1.0.12
 [1.0.11]: https://gitlab.weibo.cn/ailab/buddy-macos/-/tags/v1.0.11
