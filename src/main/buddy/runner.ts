@@ -8,6 +8,7 @@ import type {
   SendMessageInput,
   StartTaskInput,
   TaskSettings,
+  TaskStats,
   TranscriptEntry,
   TaskState
 } from '../../shared/types'
@@ -768,12 +769,13 @@ export class BuddyRunner {
         )
         // Fall through to auto-start logic (skip duplicate actor.finished)
       } else {
+        const taskStats = await this.store.getTaskStats(taskId, workspaceKey)
         await this.store.appendTranscript(
           taskId,
           workspaceKey,
           'system',
           `${actorDisplayName(pendingBreak?.actor)} 和 ${actorDisplayName(actor)} 均确认任务完成，任务结束。`,
-          { kind: 'round_notice', round, done_reason: 'dual_break_confirmed' }
+          { kind: 'round_notice', round, done_reason: 'dual_break_confirmed', ...(taskStats ? { stats: taskStats } : {}) }
         )
         await this.store.appendTaskEvent(taskId, workspaceKey, {
           type: 'task.done',

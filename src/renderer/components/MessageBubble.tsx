@@ -4,7 +4,7 @@ import { AttachmentMeta, TranscriptEntry, RoundEventSummary, RoundEventEntry, Ta
 import { renderMarkdown } from '../lib/markdown'
 import { formatDuration, formatTimeWithRelativeDate, decodeErrorText, unescapeText, ACTOR_LABEL_KEY, actorText } from '../lib/format'
 import { useLanguage, useT } from '../hooks/useI18n'
-import { useRoundEvents, useTaskStats } from '../hooks/useBuddy'
+import { useRoundEvents } from '../hooks/useBuddy'
 import { translate } from '../lib/i18n'
 
 interface MessageBubbleProps {
@@ -240,6 +240,7 @@ export function MessageBubble({ entry, taskId, workspaceKey }: MessageBubbleProp
 
   const noticeClass = isRoundNotice ? 'round-notice' : isHealthCheckFailed ? 'health-check-failed' : isHealthCheck ? 'health-check' : ''
   const isTaskDone = isRoundNotice && meta.done_reason === 'dual_break_confirmed'
+  const taskDoneStats = isTaskDone ? (meta.stats as TaskStats | undefined) : undefined
 
   return (
     <div className={`flex mb-3 ${isHuman ? 'justify-end' : 'justify-start'}`}>
@@ -258,9 +259,9 @@ export function MessageBubble({ entry, taskId, workspaceKey }: MessageBubbleProp
         {runId && !isHuman && !isSystem && taskId && workspaceKey && (
           <RoundEvents taskId={taskId} runId={runId} workspaceKey={workspaceKey} actor={entry.role} elapsedMs={meta.elapsed_ms as number | undefined} />
         )}
-        {isTaskDone && taskId && workspaceKey && (
-          <TaskDoneStats taskId={taskId} workspaceKey={workspaceKey} />
-        )}
+        {taskDoneStats ? (
+          <TaskDoneStats stats={taskDoneStats} />
+        ) : null}
       </div>
     </div>
   )
@@ -321,15 +322,11 @@ function RoundEvents({ taskId, runId, workspaceKey, actor, elapsedMs }: { taskId
   )
 }
 
-function TaskDoneStats({ taskId, workspaceKey }: { taskId: string; workspaceKey: string }) {
+function TaskDoneStats({ stats }: { stats: TaskStats }) {
   const t = useT()
   const lang = useLanguage()
-  const { data, isLoading } = useTaskStats(taskId, workspaceKey)
 
-  if (isLoading) {
-    return <div className="task-done-stats-loading">...</div>
-  }
-  if (!data || data.actors.length === 0) return null
+  if (!stats || stats.actors.length === 0) return null
 
   return (
     <div className="task-done-stats">
@@ -342,11 +339,12 @@ function TaskDoneStats({ taskId, workspaceKey }: { taskId: string; workspaceKey:
             <th>{t('taskStats.output')}</th>
             <th>{t('taskStats.cache')}</th>
             <th>{t('taskStats.duration')}</th>
+            {stats.totalCostUsd != null && <th>{t('taskStats.cost')}</th>}
             <th>{t('taskStats.rounds')}</th>
           </tr>
         </thead>
         <tbody>
-          {data.actors.map((a) => (
+          {stats.actors.map((a) => (
             <tr key={a.actor}>
               <td className="task-done-stats-actor">{actorText(a.actor, lang)}</td>
               <td className="task-done-stats-model">{a.model ?? '-'}</td>
@@ -354,17 +352,19 @@ function TaskDoneStats({ taskId, workspaceKey }: { taskId: string; workspaceKey:
               <td className="task-done-stats-num">{a.outputTokens.toLocaleString()}</td>
               <td className="task-done-stats-num">{a.cacheReadTokens.toLocaleString()}</td>
               <td>{formatDuration(a.durationMs)}</td>
+              {stats.totalCostUsd != null && <td>{a.costUsd != null ? `$${a.costUsd.toFixed(4)}` : '-'}</td>}
               <td className="task-done-stats-num">{a.rounds}</td>
             </tr>
           ))}
           <tr className="task-done-stats-total">
             <td>{t('taskStats.total')}</td>
             <td />
-            <td className="task-done-stats-num">{data.totalInputTokens.toLocaleString()}</td>
-            <td className="task-done-stats-num">{data.totalOutputTokens.toLocaleString()}</td>
-            <td className="task-done-stats-num">{data.totalCacheReadTokens.toLocaleString()}</td>
-            <td>{formatDuration(data.totalDurationMs)}</td>
-            <td className="task-done-stats-num">{data.totalRounds}</td>
+            <td className="task-done-stats-num">{stats.totalInputTokens.toLocaleString()}</td>
+            <td className="task-done-stats-num">{stats.totalOutputTokens.toLocaleString()}</td>
+            <td className="task-done-stats-num">{stats.totalCacheReadTokens.toLocaleString()}</td>
+            <td>{formatDuration(stats.totalDurationMs)}</td>
+            {stats.totalCostUsd != null && <td>${stats.totalCostUsd.toFixed(4)}</td>}
+            <td className="task-done-stats-num">{stats.totalRounds}</td>
           </tr>
         </tbody>
       </table>

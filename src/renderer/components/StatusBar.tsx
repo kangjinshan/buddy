@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Copy, Play, RotateCw } from 'lucide-react'
 import { TaskState, TaskSettings, TaskStatus, Event, Failure } from '../../shared/types'
 import { ResizeHandle } from './ResizeHandle'
-import { FileStatus as FileStatusSection, CommitModal } from './FileStatus'
+import { FileStatus as FileStatusSection, CommitModal, type CommitFeedback } from './FileStatus'
 import { useGitStatus, type GitStatusResult } from '../hooks/useBuddy'
 import {
   ACTOR_DISPLAY_NAME,
@@ -81,7 +81,7 @@ export function StatusBar({
   const repoRoot = taskState?.repo_root || null
   const { data: gitStatus, isLoading: isGitLoading } = useGitStatus(repoRoot)
   const [showCommitModal, setShowCommitModal] = useState(false)
-  const [commitFeedback, setCommitFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+  const [commitFeedback, setCommitFeedback] = useState<CommitFeedback | null>(null)
 
   // Listen for ⌘M shortcut: open commit modal on user request
   useEffect(() => {
@@ -157,20 +157,9 @@ export function StatusBar({
           isLoading={isGitLoading}
           repoRoot={repoRoot}
           onOpenCommit={() => { setCommitFeedback(null); setShowCommitModal(true) }}
+          commitFeedback={commitFeedback}
+          onDismissFeedback={() => setCommitFeedback(null)}
         />
-
-        {/* 提交反馈 */}
-        {commitFeedback && (
-          <div className={`px-4 py-2 text-xs ${commitFeedback.type === 'success' ? 'text-success-fg bg-success-bg' : 'text-danger bg-bg-subtle'}`}>
-            {commitFeedback.message}
-            <button
-              onClick={() => setCommitFeedback(null)}
-              className="ml-2 text-fg-muted hover:text-fg"
-            >
-              ×
-            </button>
-          </div>
-        )}
 
         {/* 过程事件 */}
         <details open className="border-b border-border">

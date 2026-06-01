@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { GitBranch, GitCommit, FileDiff, FileText, Loader2, Plus, Minus, Sparkles, Upload } from 'lucide-react'
+import { GitBranch, GitCommit, FileDiff, FileText, Loader2, Plus, Minus, Sparkles, Upload, CheckCircle2, AlertCircle } from 'lucide-react'
 import type { GitStatusResult, GitFileStatusCode, GitRemote } from '../../shared/types'
 import { useGitStageAll, useGitCommitAndPush } from '../hooks/useBuddy'
 import { useT, type TFunction } from '../hooks/useI18n'
@@ -8,11 +8,18 @@ import { api } from '../lib/api'
 import { formatBinding, loadBindings } from '../lib/keyboard'
 import { useQueryClient } from '@tanstack/react-query'
 
+export interface CommitFeedback {
+  type: 'success' | 'error'
+  message: string
+}
+
 interface FileStatusProps {
   gitStatus: GitStatusResult | null | undefined
   isLoading: boolean
   repoRoot: string | null
   onOpenCommit: () => void
+  commitFeedback?: CommitFeedback | null
+  onDismissFeedback?: () => void
 }
 
 function FileStatusBadge({ status, t }: { status: GitFileStatusCode; t: TFunction }) {
@@ -29,8 +36,15 @@ function FileStatusBadge({ status, t }: { status: GitFileStatusCode; t: TFunctio
   return <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-medium leading-none ${cls}`}>{label}</span>
 }
 
-export function FileStatus({ gitStatus, isLoading, repoRoot, onOpenCommit }: FileStatusProps) {
+export function FileStatus({ gitStatus, isLoading, repoRoot, onOpenCommit, commitFeedback, onDismissFeedback }: FileStatusProps) {
   const t = useT()
+
+  // Auto-dismiss feedback after 6 seconds
+  useEffect(() => {
+    if (!commitFeedback) return
+    const timer = setTimeout(() => { onDismissFeedback?.() }, 6000)
+    return () => clearTimeout(timer)
+  }, [commitFeedback, onDismissFeedback])
 
   if (!repoRoot) return null
 
@@ -106,6 +120,29 @@ export function FileStatus({ gitStatus, isLoading, repoRoot, onOpenCommit }: Fil
             <span className="ml-auto text-accent-primary">{t('shortcuts.commitAndPush')}<span className="text-fg-muted ml-1">{formatBinding(loadBindings().commitAndPush)}</span></span>
           )}
         </button>
+
+        {/* 提交反馈 */}
+        {commitFeedback && (
+          <div
+            className={`flex items-center gap-2 text-xs rounded-md px-2.5 py-1.5 ${
+              commitFeedback.type === 'success'
+                ? 'text-success-fg bg-success-bg/50'
+                : 'text-danger bg-danger/10'
+            }`}
+          >
+            {commitFeedback.type === 'success'
+              ? <CheckCircle2 size={13} className="flex-shrink-0" />
+              : <AlertCircle size={13} className="flex-shrink-0" />
+            }
+            <span className="truncate min-w-0">{commitFeedback.message}</span>
+            <button
+              onClick={() => onDismissFeedback?.()}
+              className="ml-auto flex-shrink-0 text-fg-muted hover:text-fg"
+            >
+              ×
+            </button>
+          </div>
+        )}
       </div>
     </details>
   )
