@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.13] - 2026-06-01
+
+### Added
+- 支持从 Actor 配置文件回退检测模型名称：当流式输出中无法获取模型信息时，自动读取 opencode、codex、kimi 的本地配置文件作为回退，确保运行详情中的模型名称展示更可靠
+
+### Fixed
+- 过滤 stderr 中的 CLI 警告信息（如 `--dangerously-skip-permissions` 提示），避免因无害警告导致任务误报执行失败
+- 过滤更多系统级事件（init、warning 等子类型），避免非 Actor 内容干扰任务状态判断
+
+---
+
 ## [1.0.12] - 2026-06-01
 
 ### Fixed
@@ -228,6 +239,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - 项目需求文档 (REQUIREMENTS.md)
 - 项目结构初始化
 
+[1.0.13]: https://gitlab.weibo.cn/ailab/buddy-macos/-/tags/v1.0.13
 [1.0.12]: https://gitlab.weibo.cn/ailab/buddy-macos/-/tags/v1.0.12
 [1.0.11]: https://gitlab.weibo.cn/ailab/buddy-macos/-/tags/v1.0.11
 [1.0.10]: https://gitlab.weibo.cn/ailab/buddy-macos/-/tags/v1.0.10
