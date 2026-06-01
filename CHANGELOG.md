@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.15] - 2026-06-01
+
+### Changed
+- Actor 退出错误信息更精准：区分信号杀死（如超时）与退出码，替代原来的硬编码文本
+- PING 超时从 30 秒提升到 120 秒，减少网络较慢时的误超时
+- 原生 Actor（Claude/OpenCode/Kimi）输出做规范化处理，统一生成 `{type, content}` JSON 格式，确保下游解析一致
+
+### Fixed
+- 修复 Claude 模型名称未正确提取的问题：从 modelUsage 对象中读取模型名称作为回退
+- 移除轮次事件与任务统计中的费用（cost）显示，避免数据不准确时误导用户
+
+---
+
 ## [1.0.14] - 2026-06-01
 
 ### Added
@@ -252,6 +265,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - 项目需求文档 (REQUIREMENTS.md)
 - 项目结构初始化
 
+[1.0.15]: https://gitlab.weibo.cn/ailab/buddy-macos/-/tags/v1.0.15
 [1.0.14]: https://gitlab.weibo.cn/ailab/buddy-macos/-/tags/v1.0.14
 [1.0.13]: https://gitlab.weibo.cn/ailab/buddy-macos/-/tags/v1.0.13
 [1.0.12]: https://gitlab.weibo.cn/ailab/buddy-macos/-/tags/v1.0.12
