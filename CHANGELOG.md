@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.16] - 2026-06-01
+
+### Added
+- 任务完成统计直接嵌入消息流：双确认结束时统计表随消息一同展示，无需额外加载查询
+- 提交反馈组件改进：成功/失败提示移入文件状态区域，6 秒自动消失，带图标和关闭按钮
+
+### Changed
+- break 决策提示优化：收到对端 break 请求时，明确要求只做确认或驳回决策，不再开始新工作
+
+### Fixed
+- 修复 Claude 流式输出含 tool_result 时 JSONL 解析断裂的问题：被截断的事件不再阻塞后续有效事件的解析，buddy JSON 提取不再被 tool_result 中的 "content" 键干扰
+- 修复 OpenCode/Kimi 通过 echo 命令输出 buddy JSON 时 break 信号无法被检测的问题：流式解析和输出提取均支持从 tool_use 事件中识别 buddy 消息，prompt 增加禁止使用 shell 命令输出 JSON 的规则
+- 修复任务完成统计表中费用列在部分情况下仍显示的问题：移除不可靠的费用列展示
+
+---
+
 ## [1.0.15] - 2026-06-01
 
 ### Changed
@@ -265,6 +281,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - 项目需求文档 (REQUIREMENTS.md)
 - 项目结构初始化
 
+[1.0.16]: https://gitlab.weibo.cn/ailab/buddy-macos/-/tags/v1.0.16
 [1.0.15]: https://gitlab.weibo.cn/ailab/buddy-macos/-/tags/v1.0.15
 [1.0.14]: https://gitlab.weibo.cn/ailab/buddy-macos/-/tags/v1.0.14
 [1.0.13]: https://gitlab.weibo.cn/ailab/buddy-macos/-/tags/v1.0.13
