@@ -339,7 +339,6 @@ function TaskDoneStats({ stats }: { stats: TaskStats }) {
             <th>{t('taskStats.output')}</th>
             <th>{t('taskStats.cache')}</th>
             <th>{t('taskStats.duration')}</th>
-            {stats.totalCostUsd != null && <th>{t('taskStats.cost')}</th>}
             <th>{t('taskStats.rounds')}</th>
           </tr>
         </thead>
@@ -352,7 +351,6 @@ function TaskDoneStats({ stats }: { stats: TaskStats }) {
               <td className="task-done-stats-num">{a.outputTokens.toLocaleString()}</td>
               <td className="task-done-stats-num">{a.cacheReadTokens.toLocaleString()}</td>
               <td>{formatDuration(a.durationMs)}</td>
-              {stats.totalCostUsd != null && <td>{a.costUsd != null ? `$${a.costUsd.toFixed(4)}` : '-'}</td>}
               <td className="task-done-stats-num">{a.rounds}</td>
             </tr>
           ))}
@@ -363,7 +361,6 @@ function TaskDoneStats({ stats }: { stats: TaskStats }) {
             <td className="task-done-stats-num">{stats.totalOutputTokens.toLocaleString()}</td>
             <td className="task-done-stats-num">{stats.totalCacheReadTokens.toLocaleString()}</td>
             <td>{formatDuration(stats.totalDurationMs)}</td>
-            {stats.totalCostUsd != null && <td>${stats.totalCostUsd.toFixed(4)}</td>}
             <td className="task-done-stats-num">{stats.totalRounds}</td>
           </tr>
         </tbody>
