@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.17] - 2026-06-02
+
+### Fixed
+- 修复 git 提交信息生成超时后仍返回部分输出的问题：超时时间从 30s 提升到 120s，超时终止后不再将截断的不完整输出当作有效提交信息
+
+---
+
 ## [1.0.16] - 2026-06-01
 
 ### Added
@@ -281,6 +288,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - 项目需求文档 (REQUIREMENTS.md)
 - 项目结构初始化
 
+[1.0.17]: https://gitlab.weibo.cn/ailab/buddy-macos/-/tags/v1.0.17
 [1.0.16]: https://gitlab.weibo.cn/ailab/buddy-macos/-/tags/v1.0.16
 [1.0.15]: https://gitlab.weibo.cn/ailab/buddy-macos/-/tags/v1.0.15
 [1.0.14]: https://gitlab.weibo.cn/ailab/buddy-macos/-/tags/v1.0.14
