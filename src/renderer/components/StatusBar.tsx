@@ -185,8 +185,8 @@ export function StatusBar({
               }
             })
           }}
-          onSuccess={(msg) => { setCommitFeedback({ type: 'success', message: msg }); setShowCommitModal(false) }}
-          onError={(msg) => { setCommitFeedback({ type: 'error', message: msg }) }}
+          onSuccess={(msg) => { setCommitFeedback({ type: 'success', message: msg, repoRoot: repoRoot || '' }); setShowCommitModal(false) }}
+          onError={(msg) => { setCommitFeedback({ type: 'error', message: msg, repoRoot: repoRoot || '' }) }}
         />
       )}
     </div>

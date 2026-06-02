@@ -11,6 +11,7 @@ import { useQueryClient } from '@tanstack/react-query'
 export interface CommitFeedback {
   type: 'success' | 'error'
   message: string
+  repoRoot: string
 }
 
 interface FileStatusProps {
@@ -39,12 +40,15 @@ function FileStatusBadge({ status, t }: { status: GitFileStatusCode; t: TFunctio
 export function FileStatus({ gitStatus, isLoading, repoRoot, onOpenCommit, commitFeedback, onDismissFeedback }: FileStatusProps) {
   const t = useT()
 
+  // Only show feedback for the current project
+  const activeFeedback = commitFeedback && commitFeedback.repoRoot === repoRoot ? commitFeedback : null
+
   // Auto-dismiss feedback after 6 seconds
   useEffect(() => {
-    if (!commitFeedback) return
+    if (!activeFeedback) return
     const timer = setTimeout(() => { onDismissFeedback?.() }, 6000)
     return () => clearTimeout(timer)
-  }, [commitFeedback, onDismissFeedback])
+  }, [activeFeedback, onDismissFeedback])
 
   if (!repoRoot) return null
 
@@ -122,19 +126,19 @@ export function FileStatus({ gitStatus, isLoading, repoRoot, onOpenCommit, commi
         </button>
 
         {/* 提交反馈 */}
-        {commitFeedback && (
+        {activeFeedback && (
           <div
             className={`flex items-center gap-2 text-xs rounded-md px-2.5 py-1.5 ${
-              commitFeedback.type === 'success'
+              activeFeedback.type === 'success'
                 ? 'text-success-fg bg-success-bg/50'
                 : 'text-danger bg-danger/10'
             }`}
           >
-            {commitFeedback.type === 'success'
+            {activeFeedback.type === 'success'
               ? <CheckCircle2 size={13} className="flex-shrink-0" />
               : <AlertCircle size={13} className="flex-shrink-0" />
             }
-            <span className="truncate min-w-0">{commitFeedback.message}</span>
+            <span className="truncate min-w-0">{activeFeedback.message}</span>
             <button
               onClick={() => onDismissFeedback?.()}
               className="ml-auto flex-shrink-0 text-fg-muted hover:text-fg"
