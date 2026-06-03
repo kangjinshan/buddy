@@ -441,7 +441,7 @@ function ChatSidebar({
                             {formatRelativeTime(task.updated_at, t)}
                           </span>
                         )}
-                        <div className="relative hidden group-hover/task:flex items-center flex-shrink-0" ref={isTaskMenuOpen ? taskMenuCallbackRef : undefined}>
+                        <div className="relative hidden group-hover/task:flex items-center gap-0.5 flex-shrink-0" ref={isTaskMenuOpen ? taskMenuCallbackRef : undefined}>
                           <button
                             type="button"
                             onClick={(e) => { e.stopPropagation(); setOpenMenuTaskId(isTaskMenuOpen ? null : task.task_id) }}
@@ -484,6 +484,14 @@ function ChatSidebar({
                               </button>
                             </div>
                           )}
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); togglePin(task.task_id) }}
+                            className="w-5 h-5 flex items-center justify-center rounded text-accent hover:text-accent-hover hover:bg-bg-muted"
+                            title={t('sidebar.tooltipUnpin')}
+                          >
+                            <Pin size={13} fill="currentColor" strokeWidth={2} style={{ transform: 'rotate(-30deg)' }} />
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -604,7 +612,7 @@ function ChatSidebar({
                                 {formatRelativeTime(task.updated_at, t)}
                               </span>
                             )}
-                            <div className="relative hidden group-hover/task:flex items-center flex-shrink-0" ref={isTaskMenuOpen ? taskMenuCallbackRef : undefined}>
+                            <div className="relative hidden group-hover/task:flex items-center gap-0.5 flex-shrink-0" ref={isTaskMenuOpen ? taskMenuCallbackRef : undefined}>
                               <button
                                 type="button"
                                 onClick={(e) => { e.stopPropagation(); setOpenMenuTaskId(isTaskMenuOpen ? null : task.task_id) }}
@@ -647,6 +655,14 @@ function ChatSidebar({
                                   </button>
                                 </div>
                               )}
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); togglePin(task.task_id) }}
+                                className={`w-5 h-5 flex items-center justify-center rounded hover:bg-bg-muted ${isPinned ? 'text-accent hover:text-accent-hover' : 'text-fg-muted hover:text-accent'}`}
+                                title={isPinned ? t('sidebar.tooltipUnpin') : t('sidebar.tooltipPin')}
+                              >
+                                <Pin size={13} strokeWidth={2} style={{ transform: 'rotate(-30deg)' }} />
+                              </button>
                             </div>
                           </div>
                         </div>
