@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.18] - 2026-06-03
+
+### Added
+- 任务右键菜单：悬停任务行显示「⋯」按钮，点击展开菜单可重命名、置顶/取消置顶、删除
+- 任务重命名：支持给任务设置自定义显示名称，替代默认的任务 ID
+- 设置页新增「连续失败上限」配置项，可自行调整自动暂停阈值
+
+### Changed
+- 连续失败默认上限从 3 调至 10，减少正常使用中的误暂停
+- 侧边栏任务操作从独立按钮改为统一的「⋯」菜单入口，界面更简洁
+
+### Fixed
+- 修复多项目切换时提交反馈显示在错误项目下的问题
+
+---
+
 ## [1.0.17] - 2026-06-02
 
 ### Fixed
@@ -288,6 +304,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - 项目需求文档 (REQUIREMENTS.md)
 - 项目结构初始化
 
+[1.0.18]: https://gitlab.weibo.cn/ailab/buddy-macos/-/tags/v1.0.18
 [1.0.17]: https://gitlab.weibo.cn/ailab/buddy-macos/-/tags/v1.0.17
 [1.0.16]: https://gitlab.weibo.cn/ailab/buddy-macos/-/tags/v1.0.16
 [1.0.15]: https://gitlab.weibo.cn/ailab/buddy-macos/-/tags/v1.0.15
