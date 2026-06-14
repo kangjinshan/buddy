@@ -22,6 +22,7 @@ import {
   bindingToParts,
   eventToBinding,
   bindingsEqual,
+  detectShortcutPlatform,
 } from '../lib/keyboard'
 import type { GlobalSettings, Launcher } from '../../shared/types'
 import { DEFAULT_LAUNCHER_ORDER, defaultLauncherFor, normalizeGlobalSettings } from '../../shared/defaults'
@@ -189,13 +190,20 @@ function GeneralSection() {
   const t = useT()
   const { pref, setPref, detected } = useLanguagePref()
   const { shortcut, setShortcut } = useSendShortcut()
+  const isMacPlatform = detectShortcutPlatform() === 'mac'
+  const primarySendLabel = isMacPlatform ? '⌘⏎ Command+Enter' : 'Ctrl+Enter'
 
   const detectedLabel = detected === 'zh-CN' ? '简体中文' : detected === 'zh-TW' ? '繁體中文' : 'English'
 
   const sendOptions: Array<{ value: SendShortcut; symbol: string; text: string; desc: string }> = [
     { value: 'shift-enter', symbol: '⇧⏎', text: t('settings.general.send.shiftEnter'), desc: t('settings.general.send.shiftEnterHint') },
     { value: 'enter', symbol: '⏎', text: t('settings.general.send.enter'), desc: t('settings.general.send.enterHint') },
-    { value: 'cmd-enter', symbol: '⌘⏎', text: t('settings.general.send.cmdEnter'), desc: t('settings.general.send.cmdEnterHint') }
+    {
+      value: 'cmd-enter',
+      symbol: isMacPlatform ? '⌘⏎' : 'Ctrl+Enter',
+      text: t('settings.general.send.cmdEnter', { primary: primarySendLabel }),
+      desc: t('settings.general.send.cmdEnterHint')
+    }
   ]
   const currentSend = sendOptions.find(o => o.value === shortcut) ?? sendOptions[0]
 
@@ -225,7 +233,7 @@ function GeneralSection() {
 
         <SettingsRow
           title={t('settings.general.send.title')}
-          description={t('settings.general.send.desc')}
+          description={t('settings.general.send.desc', { primary: primarySendLabel })}
           right={
             <SendShortcutSelect
               options={sendOptions}
@@ -913,13 +921,19 @@ function ShortcutRow({ def, binding, isRecording, conflictId, isModified, onStar
 
 const KEY_ICON_SIZE = 12
 
-const ICON_KEYS = new Set(['meta', 'alt', 'Enter', 'Escape', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Backspace', ' '])
+const IS_MAC_SHORTCUTS = detectShortcutPlatform() === 'mac'
+
+const ICON_KEYS = new Set(
+  IS_MAC_SHORTCUTS
+    ? ['meta', 'alt', 'Enter', 'Escape', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Backspace', ' ']
+    : ['Enter', 'Escape', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Backspace', ' ']
+)
 
 function KeyCapIcon({ partKey }: { partKey: string }) {
   const props = { size: KEY_ICON_SIZE, strokeWidth: 2 }
   switch (partKey) {
-    case 'meta': return <Command {...props} />
-    case 'alt': return <Option {...props} />
+    case 'meta': return IS_MAC_SHORTCUTS ? <Command {...props} /> : null
+    case 'alt': return IS_MAC_SHORTCUTS ? <Option {...props} /> : null
     case 'Enter': return <CornerDownLeft {...props} />
     case 'Escape': return <CircleArrowOutUpLeft {...props} />
     case 'ArrowUp': return <ArrowUp {...props} />

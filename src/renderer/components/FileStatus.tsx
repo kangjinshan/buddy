@@ -164,6 +164,7 @@ export function CommitModal({ gitStatus, repoRoot, onClose, onSuccess, onError }
   const t = useT()
   const lang = useLanguage()
   const queryClient = useQueryClient()
+  const commitShortcutLabel = formatBinding(loadBindings().commitAndPush)
   const [message, setMessage] = useState('')
   const [isGenerating, setIsGenerating] = useState(true)
   const [generateFailed, setGenerateFailed] = useState(false)
@@ -462,7 +463,7 @@ export function CommitModal({ gitStatus, repoRoot, onClose, onSuccess, onError }
             className="px-4 py-1.5 text-xs bg-accent-primary text-fg-inverse rounded-lg hover:bg-accent-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
           >
             {isCommitting && <Loader2 size={12} className="animate-spin" />}
-            {isCommitting ? t('git.committing') : shouldPush ? t('git.commitTitle') : t('git.commit')} <span className="opacity-60">⌘⏎</span>
+            {isCommitting ? t('git.committing') : shouldPush ? t('git.commitTitle') : t('git.commit')} <span className="opacity-60">{commitShortcutLabel}</span>
             </button>
           </div>
         </div>

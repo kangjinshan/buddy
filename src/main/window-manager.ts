@@ -1,24 +1,15 @@
 import { BrowserWindow, shell } from 'electron'
 import { join } from 'path'
 import { is } from '@electron-toolkit/utils'
+import { createMainWindowOptions } from './window-options'
 
 export class WindowManager {
   private mainWindow: BrowserWindow | null = null
 
   createWindow(): BrowserWindow {
-    this.mainWindow = new BrowserWindow({
-      width: 1400,
-      height: 900,
-      minWidth: 1000,
-      minHeight: 600,
-      show: false,
-      titleBarStyle: 'hiddenInset',
-      trafficLightPosition: { x: 16, y: 19 },
-      webPreferences: {
-        preload: join(__dirname, '../preload/index.js'),
-        sandbox: false
-      }
-    })
+    this.mainWindow = new BrowserWindow(
+      createMainWindowOptions(join(__dirname, '../preload/index.js'))
+    )
 
     this.mainWindow.on('ready-to-show', () => {
       this.mainWindow?.show()

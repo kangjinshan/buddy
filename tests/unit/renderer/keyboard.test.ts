@@ -2,6 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
+  createShortcutDefs,
   matchShortcut,
   loadBindings,
   saveBinding,
@@ -177,6 +178,27 @@ describe('keyboard.ts', () => {
     it('formats Option+Cmd+B correctly', () => {
       const binding: KeyBinding = { key: 'b', metaKey: true, ctrlKey: false, altKey: true, shiftKey: false }
       expect(formatBinding(binding)).toBe('⌥⌘B')
+    })
+
+    it('formats Ctrl+Enter on Windows style', () => {
+      const binding: KeyBinding = { key: 'Enter', metaKey: false, ctrlKey: true, altKey: false, shiftKey: false }
+      expect(formatBinding(binding, { platform: 'windows' })).toBe('Ctrl+Enter')
+    })
+  })
+
+  describe('platform defaults', () => {
+    it('uses Ctrl as primary modifier on Windows defaults', () => {
+      const defs = createShortcutDefs('windows')
+      const newTask = defs.find((def) => def.id === 'newTask')
+      expect(newTask).toBeTruthy()
+      expect(newTask!.defaultBinding.ctrlKey).toBe(true)
+      expect(newTask!.defaultBinding.metaKey).toBe(false)
+    })
+
+    it('matches Ctrl+N as new task on Windows defaults', () => {
+      const bindings = loadBindings({ platform: 'windows' })
+      const e = fakeEvent({ key: 'n', code: 'KeyN', ctrlKey: true })
+      expect(matchShortcut(e, bindings)).toBe('newTask')
     })
   })
 })

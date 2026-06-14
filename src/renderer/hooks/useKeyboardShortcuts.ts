@@ -24,7 +24,7 @@ export interface ShortcutActions {
  * Global keyboard shortcut listener.
  * Attaches a `keydown` listener on `window` and dispatches to the provided actions.
  * Skips when the active element is an input/textarea/select (unless the shortcut
- * includes a modifier like Cmd/Option, which signals an app-level action).
+ * includes a modifier like Cmd/Ctrl/Alt, which signals an app-level action).
  */
 export function useKeyboardShortcuts(actions: ShortcutActions) {
   const handler = useCallback((e: KeyboardEvent) => {
@@ -43,8 +43,8 @@ export function useKeyboardShortcuts(actions: ShortcutActions) {
 
     if (isTextEntry && matched !== 'escape') {
       const binding: KeyBinding = bindings[matched]
-      // Allow through if Cmd (meta) or Option (alt) is held — these are app-level
-      if (!binding.metaKey && !binding.altKey) return
+      // Allow through if Cmd/Ctrl/Alt is held — these are app-level
+      if (!binding.metaKey && !binding.ctrlKey && !binding.altKey) return
     }
 
     // When a buddy modal is open, let it handle Escape itself

@@ -2,7 +2,7 @@
 
 > Let's Go, Every Buddy! 让我们一起出发，每一位 Buddy！
 
-双 AI Agent 协作编码的 macOS 桌面应用。两个 AI Actor（执行方 + 审查方）轮流工作，逐步收敛至正确结果，支持人工校准窗口与双确认结束机制。
+双 AI Agent 协作编码的桌面应用（支持 macOS / Windows 11）。两个 AI Actor（执行方 + 审查方）轮流工作，逐步收敛至正确结果，支持人工校准窗口与双确认结束机制。
 
 官网：[GitHub Releases](../../releases)
 
@@ -19,23 +19,28 @@
 
 ## 系统要求
 
-- macOS 12+ (Monterey)
+- macOS 12+ (Monterey) 或 Windows 11
 - 至少一个已安装的 AI CLI 工具：[Claude Code](https://docs.anthropic.com/en/docs/claude-code)、[Codex CLI](https://github.com/openai/codex)、[OpenCode](https://github.com/opencode-ai/opencode)、[Kimi Code](https://github.com/MoonshotAI/kimi-cli)
 
 ## 安装
 
 ### GitHub Releases（推荐）
 
-从 [Releases](../../releases) 页面下载最新版本 DMG，打开后将 Buddy 拖入 Applications 文件夹即可。
+从 [Releases](../../releases) 页面下载对应系统版本：
+
+- **macOS**：下载 DMG，打开后将 Buddy 拖入 Applications 文件夹
+- **Windows 11**：下载 `Buddy Setup *.exe` 并运行安装
 
 或从源码构建：
 
 ```bash
 pnpm install
-pnpm dist
+pnpm dist          # macOS DMG
+pnpm dist:win      # Windows NSIS 安装包
+pnpm dist:win:cn   # Windows NSIS（国内镜像源）
 ```
 
-DMG 输出在 `release/` 目录。
+构建产物输出在 `release/` 目录。
 
 ## 开发
 
@@ -46,9 +51,15 @@ pnpm build            # 编译 main/preload/renderer
 pnpm test             # 单元测试 (vitest)
 pnpm test:e2e         # E2E 测试 (Playwright)
 pnpm typecheck        # 类型检查
-pnpm dist             # 构建 + 无签名 DMG
+pnpm dist             # 构建 macOS 包（无签名 DMG）
+pnpm dist:win         # 构建 Windows 安装包（NSIS）
+pnpm dist:win:cn      # 使用国内镜像构建 Windows 安装包（NSIS）
+pnpm package:dir:win  # 构建 Windows 目录包（win-unpacked）
+pnpm package:dir:win:cn # 使用国内镜像构建 Windows 目录包
 pnpm release:signed   # 构建 + 签名 + 公证（需 CSC_NAME 环境变量）
 ```
+
+说明：应用内三栏布局与核心交互在 macOS / Windows 保持一致，窗口控制按钮与标题栏遵循各系统原生规范。
 
 ## 架构
 
@@ -93,7 +104,11 @@ READY → RUNNING_{ACTOR} → (READY | PAUSED | DONE)
 
 ### 数据模型
 
-纯文件系统，无数据库。数据目录：`~/Library/Application Support/buddy/`
+纯文件系统，无数据库。数据目录：
+
+- macOS：`~/Library/Application Support/buddy/`
+- Windows：`%APPDATA%\\buddy\\`
+- Linux：`~/.config/buddy/`
 
 ```
 buddy/
@@ -140,7 +155,7 @@ buddy/
 | UI | React 18 + Tailwind CSS 3 |
 | 构建 | electron-vite |
 | 包管理 | pnpm |
-| 打包 | electron-builder (DMG) |
+| 打包 | electron-builder (DMG / NSIS) |
 | Schema | Zod |
 | 图标 | lucide-react |
 | i18n | 自定义 hook，CJK 自动检测 |

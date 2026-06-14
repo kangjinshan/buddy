@@ -7,6 +7,7 @@ import { setServerLocale } from './lib/i18n'
 import type { TFunction } from './hooks/useI18n'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import type { ShortcutActions } from './hooks/useKeyboardShortcuts'
+import { detectShortcutPlatform } from './lib/keyboard'
 import { TitleBar } from './components/TitleBar'
 import { Sidebar } from './components/Sidebar'
 import { ChatArea } from './components/ChatArea'
@@ -186,7 +187,7 @@ export default function App() {
 
   const handleOpenInFinder = useCallback((path: string) => {
     window.api.openInFinder(path).catch((err: unknown) => {
-      console.error('Failed to open in Finder:', err)
+      console.error('Failed to reveal path:', err)
     })
   }, [])
 
@@ -684,6 +685,8 @@ function CreateTaskModal({
   globalSettings: GlobalSettings | null
   t: TFunction
 }) {
+  const isMacPlatform = detectShortcutPlatform() === 'mac'
+  const primaryModifierHint = isMacPlatform ? '⌘⏎' : 'Ctrl+Enter'
   const [taskId, setTaskId] = useState('')
   const [repoRoot, setRepoRoot] = useState(defaultRepoRoot)
   const [taskText, setTaskText] = useState(() => t('modal.create.taskBriefDefault'))
@@ -922,7 +925,7 @@ function CreateTaskModal({
             disabled={!canSubmit}
             className="px-4 py-1.5 text-xs bg-accent-primary text-fg-inverse rounded-lg hover:bg-accent-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {t('modal.create.submit')} <span className="opacity-60 ml-1">⌘⏎</span>
+            {t('modal.create.submit')} <span className="opacity-60 ml-1">{primaryModifierHint}</span>
           </button>
         </div>
       </div>

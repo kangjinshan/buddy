@@ -1,7 +1,7 @@
 {
   "name": "buddy",
   "version": "1.0.18",
-  "description": "macOS native desktop app with built-in Buddy Core",
+  "description": "Cross-platform desktop app with built-in Buddy Core",
   "main": "./out/main/index.js",
   "packageManager": "pnpm@11.1.3",
   "scripts": {
@@ -11,12 +11,18 @@
     "test": "vitest run tests/unit",
     "test:e2e": "sh scripts/run-e2e.sh",
     "typecheck": "tsc --noEmit",
-    "clean:release": "rm -rf release",
-    "dist": "pnpm build && pnpm clean:release && CUSTOM_DMGBUILD_PATH=\"$(sh scripts/prepare-dmgbuild.sh)\" CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac --publish never -c.mac.notarize=false",
+    "clean:release": "node -e \"require('node:fs').rmSync('release',{ recursive: true, force: true })\"",
+    "dist": "pnpm dist:mac",
+    "dist:mac": "pnpm build && pnpm clean:release && CUSTOM_DMGBUILD_PATH=\"$(sh scripts/prepare-dmgbuild.sh)\" CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac --publish never -c.mac.notarize=false",
+    "dist:win": "pnpm build && pnpm clean:release && electron-builder --win --publish never",
+    "dist:win:cn": "pnpm build && pnpm clean:release && ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron-builder-binaries/ electron-builder --win --publish never",
     "verify:dist": "sh scripts/verify-dist.sh",
     "release:signed": "pnpm typecheck && pnpm test && pnpm build && pnpm clean:release && CUSTOM_DMGBUILD_PATH=\"$(sh scripts/prepare-dmgbuild.sh)\" CSC_NAME=\"${CSC_NAME:-Developer ID Application}\" electron-builder --mac --publish never -c.mac.forceCodeSigning=true",
     "package": "pnpm dist",
-    "package:dir": "pnpm build && pnpm clean:release && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac --dir -c.mac.notarize=false"
+    "package:dir": "pnpm package:dir:mac",
+    "package:dir:mac": "pnpm build && pnpm clean:release && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac --dir -c.mac.notarize=false",
+    "package:dir:win": "pnpm build && pnpm clean:release && electron-builder --win --dir --publish never",
+    "package:dir:win:cn": "pnpm build && pnpm clean:release && ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron-builder-binaries/ electron-builder --win --dir --publish never"
   },
   "keywords": [],
   "author": "",

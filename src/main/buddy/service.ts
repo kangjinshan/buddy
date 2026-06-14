@@ -1,5 +1,5 @@
 import { homedir } from 'node:os'
-import { join } from 'node:path'
+import { join, win32 } from 'node:path'
 import { app } from 'electron'
 import type {
   AttachmentMeta,
@@ -187,5 +187,25 @@ export class BuddyCoreService {
 }
 
 function defaultDataRoot(): string {
-  return join(homedir(), 'Library', 'Application Support', 'buddy')
+  let appDataPath: string | undefined
+  try {
+    appDataPath = app.getPath('appData')
+  } catch {
+    appDataPath = undefined
+  }
+  return resolveDefaultDataRoot(process.platform, appDataPath)
+}
+
+export function resolveDefaultDataRoot(platform: NodeJS.Platform, appDataPath?: string): string {
+  if (platform === 'darwin') {
+    return join(homedir(), 'Library', 'Application Support', 'buddy')
+  }
+
+  if (platform === 'win32') {
+    const base = appDataPath || win32.join(homedir(), 'AppData', 'Roaming')
+    return win32.join(base, 'buddy')
+  }
+
+  const base = appDataPath || join(homedir(), '.config')
+  return join(base, 'buddy')
 }

@@ -3,6 +3,7 @@ import { ArrowUp, ChevronDown, Square, X, FileText, FileCode2, File, FileJson, F
 import { Attachment, TaskSettings, TaskState } from '../../shared/types'
 import { taskActors, ACTOR_LABEL_KEY, Actor } from '../lib/format'
 import { useT, useSendShortcut } from '../hooks/useI18n'
+import { detectShortcutPlatform } from '../lib/keyboard'
 
 interface ComposerProps {
   onSend: (message: string, actor?: string, attachments?: Attachment[]) => void
@@ -78,6 +79,8 @@ function mimeTypeForExt(name: string): string {
 
 export function Composer({ onSend, onStart, onInterrupt, onEnqueueInstruction, isRunning, isReady, settings, taskState, draft, onDraftChange, attachments, onAttachmentsChange }: ComposerProps) {
   const t = useT()
+  const isMacPlatform = detectShortcutPlatform() === 'mac'
+  const primarySendLabel = isMacPlatform ? '⌘⏎ Command+Enter' : 'Ctrl+Enter'
   const { shortcut } = useSendShortcut()
   const { impl, participants } = taskActors(settings)
   const [nextActor, setNextActor] = useState<Actor>(impl)
@@ -160,7 +163,7 @@ export function Composer({ onSend, onStart, onInterrupt, onEnqueueInstruction, i
         for (const entry of fileEntries) {
           // Skip duplicate file paths
           if (attachments.some(a => a.filePath === entry.path)) continue
-          const name = entry.path.split('/').pop() ?? entry.path
+          const name = entry.path.split(/[\\/]/).pop() ?? entry.path
           const mimeType = mimeTypeForExt(name)
           const isImage = mimeType.startsWith('image/')
           let previewUrl: string | undefined
@@ -212,7 +215,8 @@ export function Composer({ onSend, onStart, onInterrupt, onEnqueueInstruction, i
     if (e.key !== 'Enter') return
     const ne = e.nativeEvent as KeyboardEvent & { isComposing?: boolean }
     if (ne.isComposing || ne.keyCode === 229) return
-    if (e.metaKey) {
+    const primaryModifierPressed = isMacPlatform ? e.metaKey : e.ctrlKey
+    if (primaryModifierPressed) {
       e.preventDefault()
       e.stopPropagation()
       if (draft.trim() || attachments.length > 0) {
@@ -242,7 +246,11 @@ export function Composer({ onSend, onStart, onInterrupt, onEnqueueInstruction, i
     : t('composer.placeholder.idle')
   const sendHint = isRunning && hasDraft
     ? t('composer.hint.enqueue')
-    : shortcut === 'enter' ? t('composer.hint.enter') : shortcut === 'shift-enter' ? t('composer.hint.shiftEnter') : t('composer.hint.cmdEnter')
+    : shortcut === 'enter'
+      ? t('composer.hint.enter')
+      : shortcut === 'shift-enter'
+        ? t('composer.hint.shiftEnter')
+        : t('composer.hint.cmdEnter', { primary: primarySendLabel })
 
   const imageAttachments = attachments.filter(a => isImageAttachment(a))
   const fileAttachments = attachments.filter(a => !isImageAttachment(a))
