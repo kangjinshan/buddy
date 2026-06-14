@@ -25,6 +25,8 @@ import { projectNameForTask, readStringArraySetting, writeStringArraySetting, is
 
 import type { SettingsTab } from './SettingsContent'
 
+const isMac = typeof window !== 'undefined' && window.api?.platform === 'darwin'
+
 function statusClass(status: TaskStatus): string {
   if (status === 'READY') return 'ready'
   if (status.startsWith('RUNNING_')) return 'running'
@@ -100,8 +102,8 @@ export function Sidebar({
     <div className="flex h-full">
       <div className="bg-bg text-fg flex flex-col h-full select-none" style={{ width: `${width}px` }}>
       {/* 顶部红绿灯区域 + 收起按钮 */}
-      <div className="h-[50px] flex-shrink-0 flex items-center drag-region">
-        <div className={`flex-shrink-0 ${isFullScreen ? 'w-4' : 'w-[76px]'}`} />
+      <div className={`h-[50px] flex-shrink-0 flex items-center drag-region ${isMac ? '' : 'pl-3'}`}>
+        {isMac && <div className={`flex-shrink-0 ${isFullScreen ? 'w-4' : 'w-[76px]'}`} />}
         {view !== 'settings' && (
           <button
             onClick={onToggleSidebar}

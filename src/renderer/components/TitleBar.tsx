@@ -3,6 +3,9 @@ import { useT } from '../hooks/useI18n'
 import type { TFunction } from '../hooks/useI18n'
 import type { TranslationKey } from '../lib/i18n'
 import type { TaskStatus } from '../../shared/types'
+import { WindowControls } from './WindowControls'
+
+const isMac = typeof window !== 'undefined' && window.api?.platform === 'darwin'
 
 interface TitleBarProps {
   taskName: string
@@ -54,11 +57,11 @@ export function TitleBar({
   const t = useT()
   const compact = !isStatusBarOpen ? compactStatusInfo(taskStatus) : null
   return (
-    <div className={`h-[50px] flex items-center px-4 bg-bg-elevated drag-region ${bare ? '' : 'border-b border-border'}`}>
+    <div className={`h-[50px] flex items-center pl-4 ${isMac ? 'pr-4' : 'pr-0'} bg-bg-elevated drag-region ${bare ? '' : 'border-b border-border'}`}>
       {/* 红绿灯占位 + 展开按钮（仅在侧边栏关闭时显示，否则它们在侧边栏顶部） */}
       {!isSidebarOpen && (
         <>
-          <div className={`flex-shrink-0 ${isFullScreen ? 'w-[32px]' : 'w-[68px]'}`} />
+          {isMac && <div className={`flex-shrink-0 ${isFullScreen ? 'w-[32px]' : 'w-[68px]'}`} />}
           {showToggles && (
             <button
               onClick={onToggleSidebar}
@@ -97,6 +100,9 @@ export function TitleBar({
           <PanelRight size={14} strokeWidth={2} />
         </button>
       )}
+
+      {/* Windows 窗口控制按钮（最小化/最大化/关闭） */}
+      <WindowControls />
     </div>
   )
 }

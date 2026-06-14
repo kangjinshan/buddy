@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process'
+import spawn from 'cross-spawn'
 import { existsSync, statSync, unlinkSync } from 'node:fs'
 import { join } from 'node:path'
 import { once } from 'node:events'
@@ -24,8 +24,8 @@ function execGit(args: string[], cwd: string, retries = 1): Promise<string> {
     const child = spawn('git', args, { cwd, stdio: ['pipe', 'pipe', 'pipe'] })
     const chunks: Buffer[] = []
     const errChunks: Buffer[] = []
-    child.stdout.on('data', (c: Buffer) => chunks.push(c))
-    child.stderr.on('data', (c: Buffer) => errChunks.push(c))
+    child.stdout!.on('data', (c: Buffer) => chunks.push(c))
+    child.stderr!.on('data', (c: Buffer) => errChunks.push(c))
     once(child, 'exit').then((exitArgs: unknown[]) => {
       const code = exitArgs[0] as number | null
       const stdout = Buffer.concat(chunks).toString('utf8').trim()

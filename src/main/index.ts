@@ -193,6 +193,29 @@ app.whenReady().then(async () => {
     return windowManager.getMainWindow()?.isFullScreen() ?? false
   })
 
+  ipcMain.handle('window:minimize', () => {
+    windowManager.getMainWindow()?.minimize()
+  })
+
+  ipcMain.handle('window:toggleMaximize', () => {
+    const win = windowManager.getMainWindow()
+    if (!win) return false
+    if (win.isMaximized()) {
+      win.unmaximize()
+      return false
+    }
+    win.maximize()
+    return true
+  })
+
+  ipcMain.handle('window:close', () => {
+    windowManager.getMainWindow()?.close()
+  })
+
+  ipcMain.handle('window:isMaximized', () => {
+    return windowManager.getMainWindow()?.isMaximized() ?? false
+  })
+
   ipcMain.on('menu:updateLanguage', (_event, lang: string) => {
     updateMenuLanguage(lang)
   })

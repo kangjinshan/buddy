@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process'
+import spawn from 'cross-spawn'
 import { once } from 'node:events'
 import { basename } from 'node:path'
 import { installHintFor } from './shell-path'

@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 import { createBuddyPreloadApi } from './buddy-api'
 
 const api = {
+  platform: process.platform,
   selectDirectory: (defaultPath?: string): Promise<string | null> =>
     ipcRenderer.invoke('dialog:selectDirectory', defaultPath),
   openInFinder: (path: string): Promise<void> =>
@@ -20,6 +21,19 @@ const api = {
   },
   isFullScreen: (): Promise<boolean> =>
     ipcRenderer.invoke('window:isFullScreen'),
+  minimizeWindow: (): Promise<void> =>
+    ipcRenderer.invoke('window:minimize'),
+  toggleMaximizeWindow: (): Promise<boolean> =>
+    ipcRenderer.invoke('window:toggleMaximize'),
+  closeWindow: (): Promise<void> =>
+    ipcRenderer.invoke('window:close'),
+  isMaximized: (): Promise<boolean> =>
+    ipcRenderer.invoke('window:isMaximized'),
+  onMaximizeChange: (callback: (isMaximized: boolean) => void): (() => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, isMaximized: boolean) => callback(isMaximized)
+    ipcRenderer.on('window:maximizeChange', handler)
+    return () => { ipcRenderer.removeListener('window:maximizeChange', handler) }
+  },
   updateMenuLanguage: (lang: string): void => {
     ipcRenderer.send('menu:updateLanguage', lang)
   },

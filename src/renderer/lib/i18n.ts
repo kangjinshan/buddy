@@ -210,6 +210,10 @@ const en = {
   'titleBar.toggleStatusBar.collapse': 'Collapse status bar',
   'titleBar.toggleStatusBar.expand': 'Expand status bar',
   'titleBar.status.running': 'Running',
+  'window.minimize': 'Minimize',
+  'window.maximize': 'Maximize',
+  'window.restore': 'Restore',
+  'window.close': 'Close',
 
   // ChatArea
   'chat.empty.title': 'Select or create a task',
@@ -560,6 +564,10 @@ const zhCN: typeof en = {
   'titleBar.toggleStatusBar.collapse': '收起状态栏',
   'titleBar.toggleStatusBar.expand': '展开状态栏',
   'titleBar.status.running': '运行中',
+  'window.minimize': '最小化',
+  'window.maximize': '最大化',
+  'window.restore': '向下还原',
+  'window.close': '关闭',
 
   'chat.empty.title': '选择或创建一个任务',
   'chat.empty.desc': '在左侧栏选择任务，或创建新任务开始',
@@ -899,6 +907,10 @@ const zhTW: typeof en = {
   'titleBar.toggleStatusBar.collapse': '收合狀態列',
   'titleBar.toggleStatusBar.expand': '展開狀態列',
   'titleBar.status.running': '執行中',
+  'window.minimize': '最小化',
+  'window.maximize': '最大化',
+  'window.restore': '向下還原',
+  'window.close': '關閉',
 
   'chat.empty.title': '選擇或建立任務',
   'chat.empty.desc': '在左側選擇任務，或建立新任務開始',

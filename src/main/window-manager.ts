@@ -44,6 +44,14 @@ export class WindowManager {
       this.mainWindow?.webContents.send('window:fullScreenChange', false)
     })
 
+    this.mainWindow.on('maximize', () => {
+      this.mainWindow?.webContents.send('window:maximizeChange', true)
+    })
+
+    this.mainWindow.on('unmaximize', () => {
+      this.mainWindow?.webContents.send('window:maximizeChange', false)
+    })
+
     return this.mainWindow
   }
 
